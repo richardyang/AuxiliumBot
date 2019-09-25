@@ -49,7 +49,7 @@ class Levels(commands.Cog):
         # Unpack the results and award exp/points
         user_id, user_exp, user_points = query_response
         user_exp += config.EXP_PER_MSG
-        user_points += config.PTS_PER_CHAR * len(message.content) + 20 * int(len(message.attachments))
+        user_points += config.PTS_PER_CHAR * len(message.content.split(" ")) + 5 * int(len(message.attachments))
 
         # Update the DB
         self.db_cursor.execute('UPDATE {} SET exp_this_month=?, points_this_month=? WHERE id=?'.format(current_month), (user_exp, user_points, str(message.author.id)))
@@ -69,7 +69,7 @@ class Levels(commands.Cog):
         # Unpack the results and award exp/points
         user_id, user_level, user_exp, user_points = query_response
         user_exp += config.EXP_PER_MSG
-        user_points += config.PTS_PER_CHAR
+        user_points += config.PTS_PER_CHAR * len(message.content.split(" ")) + 5 * int(len(message.attachments))
 
         # Calculate actual level. If a level up occurs, send a message
         actual_level = int(user_exp / 100 + 1)
@@ -128,6 +128,8 @@ class Levels(commands.Cog):
     
     def generate_exp_embed(self, query_response):
         embed = discord.Embed(title="Most exp gained this month:", color=0x0092ff)
+        embed.set_thumbnail(url="https://vignette.wikia.nocookie.net/wowwiki/images/2/2f/Achievement_doublejeopardy.png")
+        embed.set_footer(text="Last updated 1 minute ago", icon_url="https://cdn.discordapp.com/app-icons/619670204506701829/e0ca67b591d30e8b54c8044f0e702e4c.png")
         for user_info in query_response:
             user_id, user_exp, user_points = user_info
             # Monthly leaderboard doesn't have user level, so fetch from `users` table
@@ -139,14 +141,16 @@ class Levels(commands.Cog):
         return embed
 
     def generate_pts_embed(self, query_response):
-        embed = discord.Embed(title="Most points gained this month:", color=0xdadada)
+        embed = discord.Embed(title="Most coins gained this month:", color=0xdadada)
+        embed.set_thumbnail(url="https://vignette.wikia.nocookie.net/wowwiki/images/c/c4/Inv_misc_coin_02.png")
+        embed.set_footer(text="Last updated 1 minute ago", icon_url="https://cdn.discordapp.com/app-icons/619670204506701829/e0ca67b591d30e8b54c8044f0e702e4c.png")
         for user_info in query_response:
             user_id, user_exp, user_points = user_info
             # Monthly leaderboard doesn't have user level, so fetch from `users` table
             self.db_cursor.execute('SELECT level FROM users WHERE id=?', (user_id,) )
             user_level = self.db_cursor.fetchone()[0]
             embed.add_field(name="{} {}".format(config.LEVEL_IMAGES[user_level], self.bot.get_user(user_id).name), 
-                            value="{} points".format(user_points), 
+                            value="{} coins".format(user_points), 
                             inline=False)
         return embed
 
