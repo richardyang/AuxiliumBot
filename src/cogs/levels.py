@@ -129,7 +129,7 @@ class Levels(commands.Cog):
     def generate_exp_embed(self, query_response):
         embed = discord.Embed(title="Most exp gained this month:", color=0x0092ff)
         embed.set_thumbnail(url="https://vignette.wikia.nocookie.net/wowwiki/images/2/2f/Achievement_doublejeopardy.png")
-        embed.set_footer(text="Last updated 1 minute ago", icon_url="https://cdn.discordapp.com/app-icons/619670204506701829/e0ca67b591d30e8b54c8044f0e702e4c.png")
+        # embed.set_footer(text="Last updated 1 minute ago", icon_url="https://cdn.discordapp.com/app-icons/619670204506701829/e0ca67b591d30e8b54c8044f0e702e4c.png")
         for user_info in query_response:
             user_id, user_exp, user_points = user_info
             # Monthly leaderboard doesn't have user level, so fetch from `users` table
@@ -143,7 +143,7 @@ class Levels(commands.Cog):
     def generate_pts_embed(self, query_response):
         embed = discord.Embed(title="Most coins gained this month:", color=0xdadada)
         embed.set_thumbnail(url="https://vignette.wikia.nocookie.net/wowwiki/images/c/c4/Inv_misc_coin_02.png")
-        embed.set_footer(text="Last updated 1 minute ago", icon_url="https://cdn.discordapp.com/app-icons/619670204506701829/e0ca67b591d30e8b54c8044f0e702e4c.png")
+        # embed.set_footer(text="Last updated 1 minute ago", icon_url="https://cdn.discordapp.com/app-icons/619670204506701829/e0ca67b591d30e8b54c8044f0e702e4c.png")
         for user_info in query_response:
             user_id, user_exp, user_points = user_info
             # Monthly leaderboard doesn't have user level, so fetch from `users` table

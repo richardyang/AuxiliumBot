@@ -22,9 +22,9 @@ class Gamble(commands.Cog):
         channel = ctx.message.channel
         r = random.randint(0,100)
         if r < 50:
-            coin = discord.File(os.path.join(self.src_dir,'cogs/gifs/coin01.gif'))
+            coin = discord.File(os.path.join(self.src_dir,'img/coin01.gif'))
         else:
-            coin = discord.File(os.path.join(self.src_dir,'cogs/gifs/coin02.gif'))
+            coin = discord.File(os.path.join(self.src_dir,'img/coin02.gif'))
         msg = await channel.send(file = coin)
 
     @commands.command(name = 'roll')
@@ -37,16 +37,16 @@ class Gamble(commands.Cog):
         if arg >= 1 and arg <= 5:
             for x in range(arg):
                 r = random.randint(1,6)
-                die = discord.File(os.path.join(self.src_dir,'cogs/images/face{}.png' .format(r)))
+                die = discord.File(os.path.join(self.src_dir,'img/face{}.png' .format(r)))
                 msg = await channel.send(file = die)
         elif arg < 1 or arg is None:
             r = random.randint(1,6)
-            die = discord.File(os.path.join(self.src_dir,'cogs/images/face{}.png' .format(r)))
+            die = discord.File(os.path.join(self.src_dir,'img/face{}.png' .format(r)))
             msg = await channel.send(file = die)
         else:
             for x in range(5):
                 r = random.randint(1,6)
-                die = discord.File(os.path.join(self.src_dir,'cogs/images/face{}.png' .format(r)))
+                die = discord.File(os.path.join(self.src_dir,'img/face{}.png' .format(r)))
                 msg = await channel.send(file = die)
 
 def setup(bot):

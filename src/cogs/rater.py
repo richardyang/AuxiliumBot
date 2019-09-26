@@ -17,7 +17,7 @@ class LinkRater(commands.Cog):
         if message.author.bot:
             return
         
-        if message.channel.id in config.RATE_CHANNELS and len(message.embeds):
+        if message.channel.id in config.RATE_CHANNELS and (len(message.embeds) or "http" in message.content):
             await message.add_reaction(emoji="👍")
             await message.add_reaction(emoji="👎")
         else:

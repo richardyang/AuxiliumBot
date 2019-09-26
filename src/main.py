@@ -24,4 +24,5 @@ async def on_ready():
 bot.load_extension(f'cogs.levels')
 bot.load_extension(f'cogs.fun')
 bot.load_extension(f'cogs.rater')
+bot.load_extension(f'cogs.gamble')
 bot.run(config.TOKEN)
