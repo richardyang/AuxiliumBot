@@ -8,6 +8,19 @@ class Fun(commands.Cog):
         self.bot = bot
         self.src_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
 
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        # Do nothing if author is self
+        if message.author == self.bot.user:
+            return
+        # Do nothing if author is bot
+        if message.author.bot:
+            return
+        
+        if "can i get an f" in message.content.lower() or "can i get a f" in message.content.lower():
+            await message.add_reaction(emoji="🇫")
+        return
+
     @commands.command(name='8ball')
     async def eightball(self, ctx):
         channel = ctx.message.channel
