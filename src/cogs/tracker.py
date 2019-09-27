@@ -44,7 +44,35 @@ class Tracker(commands.Cog):
 
             response += "{}. {} - {}{} \n".format(i+1, base64.b64decode(app_id).decode(), splayed_hours, splayed_mins)
         
-        embed = discord.Embed(title="Your top {} games are:".format(len(query_response)), description=response, color=0x0092ff)        
+        embed = discord.Embed(title="Your top {} games:".format(len(query_response)), description=response, color=0x0092ff)        
+        await ctx.channel.send(embed=embed)
+
+    @commands.command()
+    async def guildtopgames(self, ctx):
+        self.db_cursor.execute('SELECT app_id, SUM(played) played_sum FROM gametime GROUP BY app_id ORDER BY played_sum DESC LIMIT 5')
+        query_response = self.db_cursor.fetchall()
+
+        response = ""
+        for i, game in enumerate(query_response):
+            app_id, played = game
+            played_hours = played // 60
+            played_mins = played % 60
+
+            if played_hours == 1:
+                splayed_hours = "1 hour and "
+            elif played_hours == 0:
+                splayed_hours = ""
+            else:
+                splayed_hours = str(played_hours) + " hours and "
+
+            if played_mins == 1:
+                splayed_mins = "1 minute"
+            else:
+                splayed_mins = str(played_mins) + " minutes"
+
+            response += "{}. {} - {}{} \n".format(i+1, base64.b64decode(app_id).decode(), splayed_hours, splayed_mins)
+        
+        embed = discord.Embed(title="The guild's top {} games:".format(len(query_response)), description=response, color=0x0092ff)        
         await ctx.channel.send(embed=embed)
         
     @tasks.loop(seconds=60)
