@@ -8,15 +8,6 @@ class Gamble(commands.Cog):
         self.bot = bot
         self.src_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
 
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        # don't respond to ourselves
-        if message.author == self.bot.user:
-            return
-
-        if message.content == 'ping':
-            await message.channel.send('pong')
-
     @commands.command(name = 'flip')
     async def coinflip(self, ctx):
         channel = ctx.message.channel
