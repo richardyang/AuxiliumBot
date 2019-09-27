@@ -42,9 +42,10 @@ class Levels(commands.Cog):
         
         # Add new user to DB if they do not exist
         if not query_response:
-            self.db_cursor.execute('INSERT INTO {} VALUES (?,?,?)'.format(current_month), (str(message.author.id), 0, 0))
+            user_points = config.PTS_PER_CHAR * len(message.content.split(" ")) + 5 * int(len(message.attachments))
+            self.db_cursor.execute('INSERT INTO {} VALUES (?,?,?)'.format(current_month), (str(message.author.id), config.EXP_PER_MSG, user_points))
             self.db.commit()
-            query_response = (str(message.author.id), 0, 0)
+            return
         
         # Unpack the results and award exp/points
         user_id, user_exp, user_points = query_response
@@ -62,9 +63,10 @@ class Levels(commands.Cog):
         
         # Add new user to DB if they do not exist
         if not query_response:
-            self.db_cursor.execute('INSERT INTO users VALUES (?,?,?,?)', (str(message.author.id), 1, 0, 0))
+            user_points = config.PTS_PER_CHAR * len(message.content.split(" ")) + 5 * int(len(message.attachments))
+            self.db_cursor.execute('INSERT INTO users VALUES (?,?,?,?)', (str(message.author.id), 1, config.EXP_PER_MSG, user_points))
             self.db.commit()
-            query_response = (str(message.author.id), 1, 0, 0)
+            return
         
         # Unpack the results and award exp/points
         user_id, user_level, user_exp, user_points = query_response
