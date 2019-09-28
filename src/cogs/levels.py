@@ -1,5 +1,6 @@
 import os
 import datetime
+import base64
 import sqlite3
 import config
 
@@ -97,6 +98,48 @@ class Levels(commands.Cog):
         # Format results as an embed
         embed = self.generate_exp_embed(query_response)
         await channel.send(embed=embed)
+
+    @commands.command()
+    async def profile(self, ctx, user:discord.User=None):
+        """
+        -profile -> returns profile for the author of the message
+        -profile @user -> returns profile for the specified user
+        """
+        if not user:
+            # No user provided, return stats for self
+            user = ctx.author
+
+        self.db_cursor.execute('SELECT * FROM users WHERE id=?', (str(user.id),) )
+        query_response = self.db_cursor.fetchone()
+        user_id, user_level, user_exp, user_points = query_response
+        profile_str = "Level {} - {:,d} exp - {:,d} coins \n".format(config.LEVEL_IMAGES[user_level], user_exp, user_points)
+
+        self.db_cursor.execute('SELECT * FROM gametime WHERE user_id=? ORDER BY played DESC LIMIT 1', (str(user.id),))
+        query_response = self.db_cursor.fetchone()
+        if query_response:
+            user_id, app_id, played = query_response
+            # String formatting for response
+            played_hours = played // 60
+            played_mins = played % 60
+            if played_hours == 1:
+                splayed_hours = "1 hour and "
+            elif played_hours == 0:
+                splayed_hours = ""
+            else:
+                splayed_hours = str(played_hours) + " hours and "
+
+            if played_mins == 1:
+                splayed_mins = "1 minute"
+            else:
+                splayed_mins = str(played_mins) + " minutes"
+            game_str = "Top game: {} - {}{}".format(base64.b64decode(app_id).decode(), splayed_hours, splayed_mins)
+        else:
+            game_str = ""
+
+        embed = discord.Embed(description=profile_str+game_str)
+        embed.set_author(name=str(user), icon_url=str(user.avatar_url))
+        await ctx.channel.send(embed=embed)
+
     
     # Background Tasks
     @tasks.loop(seconds=60)
@@ -138,12 +181,12 @@ class Levels(commands.Cog):
             self.db_cursor.execute('SELECT level FROM users WHERE id=?', (user_id,) )
             user_level = self.db_cursor.fetchone()[0]
             embed.add_field(name="{} {}".format(config.LEVEL_IMAGES[user_level], self.bot.get_user(user_id).name), 
-                            value="{} exp".format(user_exp), 
+                            value="{:,d} exp".format(user_exp), 
                             inline=False)
         return embed
 
     def generate_pts_embed(self, query_response):
-        embed = discord.Embed(title="Most coins gained this month:", color=0xdadada)
+        embed = discord.Embed(title="Most coins gained this month:", color=0x0092ff)
         embed.set_thumbnail(url="https://vignette.wikia.nocookie.net/wowwiki/images/c/c4/Inv_misc_coin_02.png")
         # embed.set_footer(text="Last updated 1 minute ago", icon_url="https://cdn.discordapp.com/app-icons/619670204506701829/e0ca67b591d30e8b54c8044f0e702e4c.png")
         for user_info in query_response:
@@ -152,9 +195,10 @@ class Levels(commands.Cog):
             self.db_cursor.execute('SELECT level FROM users WHERE id=?', (user_id,) )
             user_level = self.db_cursor.fetchone()[0]
             embed.add_field(name="{} {}".format(config.LEVEL_IMAGES[user_level], self.bot.get_user(user_id).name), 
-                            value="{} coins".format(user_points), 
+                            value="{:,d} coins".format(user_points), 
                             inline=False)
         return embed
+
 
 def setup(bot):
     bot.add_cog(Levels(bot))
