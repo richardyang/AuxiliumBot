@@ -18,18 +18,37 @@ class Tracker(commands.Cog):
         self.get_activity.start()
 
     @commands.command()
-    async def mytopgames(self, ctx):
-        self.db_cursor.execute('SELECT * FROM gametime WHERE user_id=? ORDER BY played DESC LIMIT 5', (str(ctx.author.id),))
+    async def topgames(self, ctx, user:discord.User=None):
+        """
+        -topgames -> returns top games (up to 5) for the author of the message
+        -topgames @user -> returns top games (up to 5) for the specified user
+        """
+        if not user:
+            # No user provided, return stats for self
+            user_id = ctx.author.id
+            who = "Your" # Used for formatting the response
+        else:
+            user_id = user.id
+            who = "{}'s".format(user.nick)
+
+        # Get data from db
+        self.db_cursor.execute('SELECT * FROM gametime WHERE user_id=? ORDER BY played DESC LIMIT 5', (str(user_id),))
         query_response = self.db_cursor.fetchall()
+        # If no game data found in db, send a response
         if not query_response:
-            await ctx.channel.send("{}, I don't have any data on you.".format(ctx.author.mention))
+            if not user:
+                await ctx.channel.send("{}, I don't have any data on you. Check to see if you've enabled game activity: Discord Setting -> Game Activity -> Select 'Display currently running game as a status message'.".format(ctx.author.mention))
+            else: 
+                await ctx.channel.send("{}, I don't have any data on {}.".format(ctx.author.mention, user.nick))
+            return
 
         response = ""
         for i, game in enumerate(query_response):
             user_id, app_id, played = game
+
+            # String formatting for response
             played_hours = played // 60
             played_mins = played % 60
-
             if played_hours == 1:
                 splayed_hours = "1 hour and "
             elif played_hours == 0:
@@ -44,11 +63,14 @@ class Tracker(commands.Cog):
 
             response += "{}. {} - {}{} \n".format(i+1, base64.b64decode(app_id).decode(), splayed_hours, splayed_mins)
         
-        embed = discord.Embed(title="Your top {} games:".format(len(query_response)), description=response, color=0x0092ff)        
+        embed = discord.Embed(title="{} top {} games:".format(who, len(query_response)), description=response, color=0x0092ff)        
         await ctx.channel.send(embed=embed)
 
     @commands.command()
     async def guildtopgames(self, ctx):
+        """
+        -guildtopgames -> returns the top games (up to 5) for the entire guild
+        """
         self.db_cursor.execute('SELECT app_id, SUM(played) played_sum FROM gametime GROUP BY app_id ORDER BY played_sum DESC LIMIT 5')
         query_response = self.db_cursor.fetchall()
 
@@ -77,24 +99,20 @@ class Tracker(commands.Cog):
         
     @tasks.loop(seconds=60)
     async def get_activity(self):
-        online_players = {}
+        """
+        Get all online users' activity every minute and store in db
+        """
+        logged_players = []
         for m in self.bot.get_all_members():
-            if m.bot or str(m.status) == "offline" or m.id in online_players:
+            # Skip all bots, offline players, and duplicates
+            if m.bot or str(m.status) == "offline" or m.id in logged_players:
                 continue
             
+            # Check if the user is currently in any activities and log to db
             if m.activities:
-                game = None
-                for a in m.activities:
-                    if isinstance(a, discord.activity.Game) or isinstance(a, discord.activity.Activity):
-                        game = a
-                        break
-                # No game found
-                if not game:
-                    continue
-                online_players[m.id] = game.name
+                # Base64 encode the game name so that it can be easily stored in db
+                await self.update_db(m.id, base64.b64encode(m.activities[0].name.encode()))
 
-        for user_id, game_name in online_players.items():
-            await self.update_db(user_id, base64.b64encode(game_name.encode()))
         return
 
     async def update_db(self, user_id, app_id):
