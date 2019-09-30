@@ -7,19 +7,21 @@ import config
 import discord
 from discord.ext import tasks, commands
 
-class Levels(commands.Cog):
+class Economy(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         # Open connection to SQLite DB
         src_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
-        self.db = sqlite3.connect(os.path.join(src_dir, config.DB_NAME))
+        self.db = sqlite3.connect(os.path.join(src_dir, config.DB_NAME+".db"))
         self.db_cursor = self.db.cursor()
         # Create `users` table if it does not exist
         self.db_cursor.execute('''CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, level INTEGER, exp INTEGER, points INTEGER)''')
         # Create `monthly stats` 
         self.current_month = datetime.date.today().strftime("%B_%Y") # Format current time to Month-Year
         self.db_cursor.execute('''CREATE TABLE IF NOT EXISTS {} (id INTEGER PRIMARY KEY, exp_this_month INTEGER, points_this_month INTEGER)'''.format(self.current_month))
-        
+        # Create `transactions` 
+        self.db_cursor.execute('''CREATE TABLE IF NOT EXISTS trx (src_id INTEGER, dest_id INTEGER, src_pts INTEGER, dest_pts INTEGER, amount INTEGER, ts timestamp)''')
+
         # Start the leaderboard update background task
         self.lb_update.start()
             
@@ -32,57 +34,12 @@ class Levels(commands.Cog):
         if message.author.bot:
             return
 
+        # Do nothing if is a command
+        if message.content.startswith("!") or message.content.startswith("?") or message.content.startswith("-"):
+            return
+
         await self.update_user_data(message)
-        await self.update_monthly_exp(message)
-
-    async def update_monthly_exp(self, message):
-        # Fetch user info from database
-        current_month = datetime.date.today().strftime("%B_%Y")
-        self.db_cursor.execute('SELECT * FROM {} WHERE id=?'.format(current_month), (str(message.author.id), ))
-        query_response = self.db_cursor.fetchone()
-        
-        # Add new user to DB if they do not exist
-        if not query_response:
-            user_points = config.PTS_PER_CHAR * len(message.content.split(" ")) + 5 * int(len(message.attachments))
-            self.db_cursor.execute('INSERT INTO {} VALUES (?,?,?)'.format(current_month), (str(message.author.id), config.EXP_PER_MSG, user_points))
-            self.db.commit()
-            return
-        
-        # Unpack the results and award exp/points
-        user_id, user_exp, user_points = query_response
-        user_exp += config.EXP_PER_MSG
-        user_points += config.PTS_PER_CHAR * len(message.content.split(" ")) + 5 * int(len(message.attachments))
-
-        # Update the DB
-        self.db_cursor.execute('UPDATE {} SET exp_this_month=?, points_this_month=? WHERE id=?'.format(current_month), (user_exp, user_points, str(message.author.id)))
-        self.db.commit()
-    
-    async def update_user_data(self, message):
-        # Fetch user info from database
-        self.db_cursor.execute('SELECT * FROM users WHERE id=?', (str(message.author.id),) )
-        query_response = self.db_cursor.fetchone()
-        
-        # Add new user to DB if they do not exist
-        if not query_response:
-            user_points = config.PTS_PER_CHAR * len(message.content.split(" ")) + 5 * int(len(message.attachments))
-            self.db_cursor.execute('INSERT INTO users VALUES (?,?,?,?)', (str(message.author.id), 1, config.EXP_PER_MSG, user_points))
-            self.db.commit()
-            return
-        
-        # Unpack the results and award exp/points
-        user_id, user_level, user_exp, user_points = query_response
-        user_exp += config.EXP_PER_MSG
-        user_points += config.PTS_PER_CHAR * len(message.content.split(" ")) + 5 * int(len(message.attachments))
-
-        # Calculate actual level. If a level up occurs, send a message
-        actual_level = int(user_exp / 100 + 1)
-        if user_level < actual_level:
-            user_level = actual_level
-            await message.channel.send('{} reached level {}'.format(message.author.mention, config.LEVEL_IMAGES[user_level]))
-        
-        # Update the DB
-        self.db_cursor.execute('UPDATE users SET level=?, exp=?, points=? WHERE id=?', (user_level, user_exp, user_points, str(message.author.id)))
-        self.db.commit()
+        await self.update_monthly_data(message)
 
     # Commands
     @commands.command()
@@ -140,7 +97,44 @@ class Levels(commands.Cog):
         embed.set_author(name=str(user), icon_url=str(user.avatar_url))
         await ctx.channel.send(embed=embed)
 
+    @commands.command()
+    async def givegold(self, ctx, user:discord.User=None, amount:int=None):
+        if not user or not amount:
+            await ctx.channel.send('You need to specify a user and amount. E.G. `-givegold @Auxilium 100`')
+            return
+        if user.id == ctx.author.id:
+            await ctx.channel.send("You can't send gold to yourself.")
+            return
+        
+        self.db_cursor.execute('SELECT * FROM users WHERE id=?', (str(ctx.author.id),) )
+        query_response = self.db_cursor.fetchone()
+        auth_id, auth_level, auth_exp, auth_points = query_response
+
+        if auth_points < int(amount):
+            await ctx.channel.send("You don't have enough gold.")
+            return
+
+        self.db_cursor.execute('SELECT * FROM users WHERE id=?', (str(user.id),) )
+        query_response = self.db_cursor.fetchone()
+        if not query_response:
+            await ctx.channel.send("User doesn't exist.")
+            return
+        targ_id, targ_level, targ_exp, targ_points = query_response
+
+        self.db_cursor.execute('UPDATE users SET level=?, exp=?, points=? WHERE id=?', (auth_level, auth_exp, auth_points-amount, str(auth_id)))
+        self.db.commit()
+
+        self.db_cursor.execute('UPDATE users SET level=?, exp=?, points=? WHERE id=?', (targ_level, targ_exp, targ_points+amount, str(targ_id)))
+        self.db.commit()
+
+        #(src_id INTEGER, dest_id INTEGER, src_pts INTEGER, dest_pts INTEGER, amount INTEGER, ts timestamp)
+        self.db_cursor.execute('INSERT INTO trx VALUES (?,?,?,?,?,?)', (auth_id, targ_id, auth_points, targ_points, amount, datetime.datetime.now()))
+        self.db.commit()
+        
+        await ctx.channel.send("Sent {} gold to {}. Your balance is now: {}. Their balance is now: {}".format(amount, user.mention, auth_points-amount, targ_points+amount))
+        return
     
+
     # Background Tasks
     @tasks.loop(seconds=60)
     async def lb_update(self):
@@ -171,6 +165,58 @@ class Levels(commands.Cog):
             await messages[1].edit(embed=exp_embed)
             await messages[0].edit(embed=pts_embed)
     
+    # Util functions
+    async def update_user_data(self, message):
+        # Fetch user info from database
+        self.db_cursor.execute('SELECT * FROM users WHERE id=?', (str(message.author.id),) )
+        query_response = self.db_cursor.fetchone()
+        
+        # Add new user to DB if they do not exist
+        if not query_response:
+            user_points = config.PTS_PER_CHAR * len(message.content.split(" ")) + 5 * int(len(message.attachments))
+            self.db_cursor.execute('INSERT INTO users VALUES (?,?,?,?)', (str(message.author.id), 1, config.EXP_PER_MSG, user_points))
+            self.db.commit()
+            return
+        
+        # Unpack the results and award exp/points
+        user_id, user_level, user_exp, user_points = query_response
+        # user_exp += config.EXP_PER_MSG * len(message.content) + 5 * int(len(message.attachments))
+        user_exp += 5
+        user_points += config.PTS_PER_CHAR * len(message.content) + 5 * int(len(message.attachments))
+
+        # Calculate actual level. If a level up occurs, send a message
+        actual_level = min(60, int(user_exp / 100 + 1))
+        if user_level < actual_level:
+            user_level = actual_level
+            await message.channel.send('{} reached level {}'.format(message.author.mention, config.LEVEL_IMAGES[user_level]))
+        
+        # Update the DB
+        self.db_cursor.execute('UPDATE users SET level=?, exp=?, points=? WHERE id=?', (user_level, user_exp, user_points, str(message.author.id)))
+        self.db.commit()
+
+    async def update_monthly_data(self, message):
+        # Fetch user info from database
+        current_month = datetime.date.today().strftime("%B_%Y")
+        self.db_cursor.execute('SELECT * FROM {} WHERE id=?'.format(current_month), (str(message.author.id), ))
+        query_response = self.db_cursor.fetchone()
+        
+        # Add new user to DB if they do not exist
+        if not query_response:
+            user_points = config.PTS_PER_CHAR * len(message.content.split(" ")) + 5 * int(len(message.attachments))
+            self.db_cursor.execute('INSERT INTO {} VALUES (?,?,?)'.format(current_month), (str(message.author.id), config.EXP_PER_MSG, user_points))
+            self.db.commit()
+            return
+        
+        # Unpack the results and award exp/points
+        user_id, user_exp, user_points = query_response
+        # user_exp += config.EXP_PER_MSG * len(message.content) + 5 * int(len(message.attachments))
+        user_exp += 5
+        user_points += config.PTS_PER_CHAR * len(message.content) + 5 * int(len(message.attachments))
+
+        # Update the DB
+        self.db_cursor.execute('UPDATE {} SET exp_this_month=?, points_this_month=? WHERE id=?'.format(current_month), (user_exp, user_points, str(message.author.id)))
+        self.db.commit()
+
     def generate_exp_embed(self, query_response):
         embed = discord.Embed(title="Most exp gained this month:", color=0x0092ff)
         embed.set_thumbnail(url="https://vignette.wikia.nocookie.net/wowwiki/images/2/2f/Achievement_doublejeopardy.png")
@@ -201,4 +247,4 @@ class Levels(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Levels(bot))
+    bot.add_cog(Economy(bot))
