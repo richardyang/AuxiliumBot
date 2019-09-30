@@ -11,7 +11,7 @@ class Tracker(commands.Cog):
         self.bot = bot
         # Open connection to SQLite DB
         src_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
-        self.db = sqlite3.connect(os.path.join(src_dir, config.DB_NAME))
+        self.db = sqlite3.connect(os.path.join(src_dir, config.DB_NAME+".db"))
         self.db_cursor = self.db.cursor()
         # Create `gametime` table if it does not exist
         self.db_cursor.execute('''CREATE TABLE IF NOT EXISTS gametime (user_id INTEGER, app_id VARCHAR(500), played INTEGER)''')
@@ -29,7 +29,7 @@ class Tracker(commands.Cog):
             who = "Your" # Used for formatting the response
         else:
             user_id = user.id
-            who = "{}'s".format(user.nick)
+            who = "{}'s".format(user.display_name)
 
         # Get data from db
         self.db_cursor.execute('SELECT * FROM gametime WHERE user_id=? ORDER BY played DESC LIMIT 5', (str(user_id),))
@@ -39,7 +39,7 @@ class Tracker(commands.Cog):
             if not user:
                 await ctx.channel.send("{}, I don't have any data on you. Check to see if you've enabled game activity: Discord Setting -> Game Activity -> Select 'Display currently running game as a status message'.".format(ctx.author.mention))
             else: 
-                await ctx.channel.send("{}, I don't have any data on {}.".format(ctx.author.mention, user.nick))
+                await ctx.channel.send("{}, I don't have any data on {}.".format(ctx.author.mention, user.display_name))
             return
 
         response = ""
