@@ -3,6 +3,7 @@ import datetime
 import base64
 import sqlite3
 import config
+import random
 
 import discord
 from discord.ext import tasks, commands
@@ -16,12 +17,9 @@ class Economy(commands.Cog):
         self.db_cursor = self.db.cursor()
         # Create `users` table if it does not exist
         self.db_cursor.execute('''CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, level INTEGER, exp INTEGER, points INTEGER)''')
-        # Create `monthly stats` 
-        self.current_month = datetime.date.today().strftime("%B_%Y") # Format current time to Month-Year
-        self.db_cursor.execute('''CREATE TABLE IF NOT EXISTS {} (id INTEGER PRIMARY KEY, exp_this_month INTEGER, points_this_month INTEGER)'''.format(self.current_month))
         # Create `transactions` 
-        self.db_cursor.execute('''CREATE TABLE IF NOT EXISTS trx (src_id INTEGER, dest_id INTEGER, src_pts INTEGER, dest_pts INTEGER, amount INTEGER, ts timestamp)''')
-
+        self.db_cursor.execute('''CREATE TABLE IF NOT EXISTS transactions (src_id INTEGER, dest_id INTEGER, src_pts INTEGER, dest_pts INTEGER, amount INTEGER, ts timestamp)''')
+        
         # Start the leaderboard update background task
         self.lb_update.start()
             
@@ -49,7 +47,8 @@ class Economy(commands.Cog):
         
         # Get this month's leaderboard
         current_month = datetime.date.today().strftime("%B_%Y")
-        self.db_cursor.execute('SELECT * FROM {} WHERE id!=? ORDER BY exp_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
+        # self.db_cursor.execute('SELECT * FROM {} WHERE id!=? ORDER BY exp_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
+        self.db_cursor.execute('SELECT * FROM {} ORDER BY exp_this_month DESC'.format(current_month))
         query_response = self.db_cursor.fetchmany(5)
 
         # Format results as an embed
@@ -93,12 +92,25 @@ class Economy(commands.Cog):
         else:
             game_str = ""
 
+        # Try to get primary award
+        self.db_cursor.execute('SELECT * FROM users_awards_primary WHERE user_id=?', (str(user.id),))
+        award_response = self.db_cursor.fetchone()
+
         embed = discord.Embed(description=profile_str+game_str)
         embed.set_author(name=str(user), icon_url=str(user.avatar_url))
+        if award_response:
+            user_id, award_name = award_response
+            self.db_cursor.execute('SELECT * FROM awards WHERE award_id=?', (award_name,))
+            award_name, award_img = self.db_cursor.fetchone()
+            award_img = base64.b64decode(award_img).decode()
+            print(award_img)
+            embed.set_thumbnail(url=award_img)
         await ctx.channel.send(embed=embed)
 
     @commands.command()
     async def givegold(self, ctx, user:discord.User=None, amount:int=None):
+        amount = abs(amount)            
+
         if not user or not amount:
             await ctx.channel.send('You need to specify a user and amount. E.G. `-givegold @Auxilium 100`')
             return
@@ -128,12 +140,11 @@ class Economy(commands.Cog):
         self.db.commit()
 
         #(src_id INTEGER, dest_id INTEGER, src_pts INTEGER, dest_pts INTEGER, amount INTEGER, ts timestamp)
-        self.db_cursor.execute('INSERT INTO trx VALUES (?,?,?,?,?,?)', (auth_id, targ_id, auth_points, targ_points, amount, datetime.datetime.now()))
+        self.db_cursor.execute('INSERT INTO transactions VALUES (?,?,?,?,?,?)', (auth_id, targ_id, auth_points, targ_points, amount, datetime.datetime.now()))
         self.db.commit()
         
-        await ctx.channel.send("Sent {} gold to {}. Your balance is now: {}. Their balance is now: {}".format(amount, user.mention, auth_points-amount, targ_points+amount))
+        await ctx.channel.send("Sent {} gold to {}. Your balance is now {}. Their balance is now {}.".format(amount, user.mention, auth_points-amount, targ_points+amount))
         return
-    
 
     # Background Tasks
     @tasks.loop(seconds=60)
@@ -146,13 +157,21 @@ class Economy(commands.Cog):
         
         # Get this month's exp leaderboard
         current_month = datetime.date.today().strftime("%B_%Y")
-        self.db_cursor.execute('SELECT * FROM {} WHERE id!=? ORDER BY exp_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
+        # self.db_cursor.execute('SELECT * FROM {} WHERE id!=? ORDER BY exp_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
+        self.db_cursor.execute('SELECT * FROM {} ORDER BY exp_this_month DESC'.format(current_month))
         query_response = self.db_cursor.fetchmany(5)
+        if not query_response:
+            print("No monthly exp leaders")
+            return
         exp_embed = self.generate_exp_embed(query_response)
 
         # Get this month's point leaderboard
-        self.db_cursor.execute('SELECT * FROM {} WHERE id!=? ORDER BY points_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
+        # self.db_cursor.execute('SELECT * FROM {} WHERE id!=? ORDER BY points_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
+        self.db_cursor.execute('SELECT * FROM {} ORDER BY points_this_month DESC'.format(current_month))
         query_response = self.db_cursor.fetchmany(5)
+        if not query_response:
+            print("No monthly point leaders")
+            return
         pts_embed = self.generate_pts_embed(query_response)
 
         # Get the last message in the channel
@@ -180,14 +199,14 @@ class Economy(commands.Cog):
         
         # Unpack the results and award exp/points
         user_id, user_level, user_exp, user_points = query_response
-        # user_exp += config.EXP_PER_MSG * len(message.content) + 5 * int(len(message.attachments))
-        user_exp += 5
-        user_points += config.PTS_PER_CHAR * len(message.content) + 5 * int(len(message.attachments))
+        user_exp += config.EXP_PER_MSG * len(message.content.strip()) + 5 * int(len(message.attachments))
+        user_points += random.randint(1, 10)
+        # user_points += config.PTS_PER_CHAR * len(message.content.strip()) + 5 * int(len(message.attachments))
 
-        # Calculate actual level. If a level up occurs, send a message
-        actual_level = min(60, int(user_exp / 100 + 1))
-        if user_level < actual_level:
-            user_level = actual_level
+        # Calculate exp needed for next level. if a level occurs, send a message
+        next_level_exp = 150 * ((user_level+1)**2) - (150 * (user_level+1))
+        if user_exp > next_level_exp:
+            user_level += 1
             await message.channel.send('{} reached level {}'.format(message.author.mention, config.LEVEL_IMAGES[user_level]))
         
         # Update the DB
@@ -209,9 +228,9 @@ class Economy(commands.Cog):
         
         # Unpack the results and award exp/points
         user_id, user_exp, user_points = query_response
-        # user_exp += config.EXP_PER_MSG * len(message.content) + 5 * int(len(message.attachments))
-        user_exp += 5
-        user_points += config.PTS_PER_CHAR * len(message.content) + 5 * int(len(message.attachments))
+        user_exp += config.EXP_PER_MSG * len(message.content.strip()) + 5 * int(len(message.attachments))
+        # user_points += config.PTS_PER_CHAR * len(message.content.strip()) + 5 * int(len(message.attachments))
+        user_points += random.randint(1, 10)
 
         # Update the DB
         self.db_cursor.execute('UPDATE {} SET exp_this_month=?, points_this_month=? WHERE id=?'.format(current_month), (user_exp, user_points, str(message.author.id)))
@@ -220,7 +239,6 @@ class Economy(commands.Cog):
     def generate_exp_embed(self, query_response):
         embed = discord.Embed(title="Most exp gained this month:", color=0x0092ff)
         embed.set_thumbnail(url="https://vignette.wikia.nocookie.net/wowwiki/images/2/2f/Achievement_doublejeopardy.png")
-        # embed.set_footer(text="Last updated 1 minute ago", icon_url="https://cdn.discordapp.com/app-icons/619670204506701829/e0ca67b591d30e8b54c8044f0e702e4c.png")
         for user_info in query_response:
             user_id, user_exp, user_points = user_info
             # Monthly leaderboard doesn't have user level, so fetch from `users` table
@@ -234,7 +252,6 @@ class Economy(commands.Cog):
     def generate_pts_embed(self, query_response):
         embed = discord.Embed(title="Most coins gained this month:", color=0x0092ff)
         embed.set_thumbnail(url="https://vignette.wikia.nocookie.net/wowwiki/images/c/c4/Inv_misc_coin_02.png")
-        # embed.set_footer(text="Last updated 1 minute ago", icon_url="https://cdn.discordapp.com/app-icons/619670204506701829/e0ca67b591d30e8b54c8044f0e702e4c.png")
         for user_info in query_response:
             user_id, user_exp, user_points = user_info
             # Monthly leaderboard doesn't have user level, so fetch from `users` table

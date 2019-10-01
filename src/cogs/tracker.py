@@ -14,7 +14,7 @@ class Tracker(commands.Cog):
         self.db = sqlite3.connect(os.path.join(src_dir, config.DB_NAME+".db"))
         self.db_cursor = self.db.cursor()
         # Create `gametime` table if it does not exist
-        self.db_cursor.execute('''CREATE TABLE IF NOT EXISTS gametime (user_id INTEGER, app_id VARCHAR(500), played INTEGER)''')
+        self.db_cursor.execute('''CREATE TABLE IF NOT EXISTS gametime (user_id INTEGER, app_id VARCHAR(5000), played INTEGER)''')
         self.get_activity.start()
 
     @commands.command()
