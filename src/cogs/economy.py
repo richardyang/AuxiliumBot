@@ -37,7 +37,7 @@ class Economy(commands.Cog):
             return
 
         await self.update_user_data(message)
-        await self.update_monthly_data(message)
+        # await self.update_monthly_data(message)
 
     # Commands
     @commands.command()
@@ -235,7 +235,7 @@ class Economy(commands.Cog):
         await self.set_global_user_data(user_id, user_level, user_exp+exp, user_points+points)
         await self.set_monthly_user_data(user_id, user_exp_m+exp, user_points_m+points)
         return
-        
+
     def generate_exp_embed(self, query_response):
         embed = discord.Embed(title="Most exp gained this month:", color=0x0092ff)
         embed.set_thumbnail(url="https://vignette.wikia.nocookie.net/wowwiki/images/2/2f/Achievement_doublejeopardy.png")
