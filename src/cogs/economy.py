@@ -4,6 +4,7 @@ import base64
 import sqlite3
 import config
 import random
+import re
 
 import discord
 from discord.ext import tasks, commands
@@ -224,7 +225,8 @@ class Economy(commands.Cog):
         
         # Award random points between 1 to 10*user_level
         points = random.randint(1, 10*user_level)
-        exp = config.EXP_PER_MSG * len(message.content.strip()) + 5 * int(len(message.attachments))
+        message_str = re.sub('<[^>]+>', '', message.content).strip()
+        exp = config.EXP_PER_MSG * len(message_str) + 5 * int(len(message.attachments))
 
         # Calculate exp needed for next level. if a level occurs, send a message
         next_level_exp = 150 * ((user_level+1)**2) - (150 * (user_level+1))
