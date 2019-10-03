@@ -185,57 +185,57 @@ class Economy(commands.Cog):
             await messages[0].edit(embed=pts_embed)
     
     # Util functions
-    async def update_user_data(self, message):
-        # Fetch user info from database
-        self.db_cursor.execute('SELECT * FROM users WHERE id=?', (str(message.author.id),) )
+    def get_monthly_user_data(self, user_id):
+        current_month = datetime.date.today().strftime("%B_%Y")
+        self.db_cursor.execute('SELECT * FROM {} WHERE id=?'.format(current_month), (user_id, ))
         query_response = self.db_cursor.fetchone()
-        
-        # Add new user to DB if they do not exist
         if not query_response:
-            user_points = config.PTS_PER_CHAR * len(message.content.split(" ")) + 5 * int(len(message.attachments))
-            self.db_cursor.execute('INSERT INTO users VALUES (?,?,?,?)', (str(message.author.id), 1, config.EXP_PER_MSG, user_points))
+            # Add new user to table if they do not exist
+            query_response = (user_id, 0, 0)
+            self.db_cursor.execute('INSERT INTO {} VALUES (?,?,?)'.format(current_month), query_response)
             self.db.commit()
-            return
+        return query_response
+
+    def get_global_user_data(self, user_id):
+        self.db_cursor.execute('SELECT * FROM users WHERE id=?', (user_id,) )
+        query_response = self.db_cursor.fetchone()
+        # Add new user to table if they do not exist
+        if not query_response:
+            # Add new user to table if they do not exist
+            query_response = (user_id, 1, 0, 0)
+            self.db_cursor.execute('INSERT INTO users VALUES (?,?,?,?)', query_response)
+            self.db.commit()
+        return query_response
+
+    async def set_global_user_data(self, user_id, user_level, user_exp, user_points):
+        self.db_cursor.execute('UPDATE users SET level=?, exp=?, points=? WHERE id=?', (user_level, user_exp, user_points, user_id))
+        self.db.commit()
+        return
+
+    async def set_monthly_user_data(self, user_id, user_exp, user_points):
+        current_month = datetime.date.today().strftime("%B_%Y")
+        self.db_cursor.execute('UPDATE {} SET exp_this_month=?, points_this_month=? WHERE id=?'.format(current_month), (user_exp, user_points, user_id))
+        self.db.commit()
+        return
+
+    async def update_user_data(self, message):
+        user_id, user_level, user_exp, user_points = self.get_global_user_data(str(message.author.id))
+        _, user_exp_m, user_points_m = self.get_monthly_user_data(str(message.author.id))
         
-        # Unpack the results and award exp/points
-        user_id, user_level, user_exp, user_points = query_response
-        user_exp += config.EXP_PER_MSG * len(message.content.strip()) + 5 * int(len(message.attachments))
-        user_points += random.randint(1, 10)
-        # user_points += config.PTS_PER_CHAR * len(message.content.strip()) + 5 * int(len(message.attachments))
+        # Award random points between 1 to 10*user_level
+        points = random.randint(1, 10*user_level)
+        exp = config.EXP_PER_MSG * len(message.content.strip()) + 5 * int(len(message.attachments))
 
         # Calculate exp needed for next level. if a level occurs, send a message
         next_level_exp = 150 * ((user_level+1)**2) - (150 * (user_level+1))
         if user_exp > next_level_exp:
             user_level += 1
             await message.channel.send('{} reached level {}'.format(message.author.mention, config.LEVEL_IMAGES[user_level]))
-        
-        # Update the DB
-        self.db_cursor.execute('UPDATE users SET level=?, exp=?, points=? WHERE id=?', (user_level, user_exp, user_points, str(message.author.id)))
-        self.db.commit()
 
-    async def update_monthly_data(self, message):
-        # Fetch user info from database
-        current_month = datetime.date.today().strftime("%B_%Y")
-        self.db_cursor.execute('SELECT * FROM {} WHERE id=?'.format(current_month), (str(message.author.id), ))
-        query_response = self.db_cursor.fetchone()
+        await self.set_global_user_data(user_id, user_level, user_exp+exp, user_points+points)
+        await self.set_monthly_user_data(user_id, user_exp_m+exp, user_points_m+points)
+        return
         
-        # Add new user to DB if they do not exist
-        if not query_response:
-            user_points = config.PTS_PER_CHAR * len(message.content.split(" ")) + 5 * int(len(message.attachments))
-            self.db_cursor.execute('INSERT INTO {} VALUES (?,?,?)'.format(current_month), (str(message.author.id), config.EXP_PER_MSG, user_points))
-            self.db.commit()
-            return
-        
-        # Unpack the results and award exp/points
-        user_id, user_exp, user_points = query_response
-        user_exp += config.EXP_PER_MSG * len(message.content.strip()) + 5 * int(len(message.attachments))
-        # user_points += config.PTS_PER_CHAR * len(message.content.strip()) + 5 * int(len(message.attachments))
-        user_points += random.randint(1, 10)
-
-        # Update the DB
-        self.db_cursor.execute('UPDATE {} SET exp_this_month=?, points_this_month=? WHERE id=?'.format(current_month), (user_exp, user_points, str(message.author.id)))
-        self.db.commit()
-
     def generate_exp_embed(self, query_response):
         embed = discord.Embed(title="Most exp gained this month:", color=0x0092ff)
         embed.set_thumbnail(url="https://vignette.wikia.nocookie.net/wowwiki/images/2/2f/Achievement_doublejeopardy.png")
