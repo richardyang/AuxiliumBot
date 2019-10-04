@@ -48,8 +48,8 @@ class Economy(commands.Cog):
         
         # Get this month's leaderboard
         current_month = datetime.date.today().strftime("%B_%Y")
-        # self.db_cursor.execute('SELECT * FROM {} WHERE id!=? ORDER BY exp_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
-        self.db_cursor.execute('SELECT * FROM {} ORDER BY exp_this_month DESC'.format(current_month))
+        self.db_cursor.execute('SELECT * FROM {} WHERE id!=? ORDER BY exp_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
+        # self.db_cursor.execute('SELECT * FROM {} ORDER BY exp_this_month DESC'.format(current_month))
         query_response = self.db_cursor.fetchmany(5)
 
         # Format results as an embed
@@ -158,8 +158,8 @@ class Economy(commands.Cog):
         
         # Get this month's exp leaderboard
         current_month = datetime.date.today().strftime("%B_%Y")
-        # self.db_cursor.execute('SELECT * FROM {} WHERE id!=? ORDER BY exp_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
-        self.db_cursor.execute('SELECT * FROM {} ORDER BY exp_this_month DESC'.format(current_month))
+        self.db_cursor.execute('SELECT * FROM {} WHERE id!=? ORDER BY exp_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
+        # self.db_cursor.execute('SELECT * FROM {} ORDER BY exp_this_month DESC'.format(current_month))
         query_response = self.db_cursor.fetchmany(5)
         if not query_response:
             print("No monthly exp leaders")
@@ -167,8 +167,8 @@ class Economy(commands.Cog):
         exp_embed = self.generate_exp_embed(query_response)
 
         # Get this month's point leaderboard
-        # self.db_cursor.execute('SELECT * FROM {} WHERE id!=? ORDER BY points_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
-        self.db_cursor.execute('SELECT * FROM {} ORDER BY points_this_month DESC'.format(current_month))
+        self.db_cursor.execute('SELECT * FROM {} WHERE id!=? ORDER BY points_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
+        # self.db_cursor.execute('SELECT * FROM {} ORDER BY points_this_month DESC'.format(current_month))
         query_response = self.db_cursor.fetchmany(5)
         if not query_response:
             print("No monthly point leaders")
