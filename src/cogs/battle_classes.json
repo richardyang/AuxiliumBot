@@ -1,0 +1,122 @@
+{
+    "gw2_guardian": {
+        "icon": "<:guardian:629574093758267413>",
+        "attacks": [
+            "Virtue of Justice",
+            "Whirling Wrath",
+            "Leap of Faith",
+            "Symbol of Wrath",
+            "Binding Blade",
+            "Sword of Wrath",
+            "Symbol of Blades",
+            "Ray of Judgment",
+            "Smite Condition",
+            "Judge's Intervention"
+        ],
+        "blocks": [
+            "Virtue of Courage",
+            "Shield of Wrath",
+            "Renewed Focus"
+        ],
+        "heals": [
+            "Virtue of Resolve",
+            "Litany of Wrath"
+        ]
+    },
+    "gw2_dragonhunter": {
+        "icon": "<:dragonhunter:629921097831415809>",
+        "attacks": [
+            "Spear of Justice",
+            "Puncture Shot",
+            "True Shot", 
+            "Symbol of Energy",
+            "Hunter's Ward",
+            "Sword of Wrath",
+            "Symbol of Blades",
+            "Shield of Judgment",
+            "Judge's Intervention",
+            "Test of Faith"
+        ],
+        "blocks": [
+            "Shield of Courage",
+            "Shield of Absorption",
+            "Renewed Focus"
+        ],
+        "heals": [
+            "Wings of Resolve",
+            "Purification"
+        ]
+    },
+    "gw2_warrior": {
+        "icon": "<:warrior:629574093947142144>",
+        "attacks": [
+            "Hundred Blades",
+            "Whirlwind Attack",
+            "Bladetrail",
+            "Rush",
+            "Arcing Slice",
+            "Cyclone Axe",
+            "Chop",
+            "Eviscerate",
+            "Shield Bash",
+            "Bull's Charge",
+            "Rampage"
+        ],
+        "blocks": [
+            "Shield Stance",
+            "Endure Pain",
+            "Beserker Stance"
+        ],
+        "heals": [
+            "Healing Signet"
+        ]
+    },
+    "gw2_spellbreaker": {
+        "icon": "<:spellbreaker:629921098049519616>",
+        "attacks": [
+            "Hundred Blades",
+            "Whirlwind Attack",
+            "Bladetrail",
+            "Rush",
+            "Arcing Slice",
+            "Aura Slicer",
+            "Precise Cut",
+            "Shield Bash",
+            "Bull's Charge",
+            "Rampage"
+        ],
+        "blocks": [
+            "Shield Stance",
+            "Endure Pain",
+            "Beserker Stance",
+            "Full Counter"
+        ],
+        "heals": [
+            "Healing Signet"
+        ]
+    },
+    "gw2_necromancer": {
+        "icon": "<:necromancer:629858805366259722>",
+        "attacks": [
+            "Blood Curse",
+            "Grasping Dead",
+            "Feast of Corruption",
+            "Wail of Doom",
+            "Locust Swarm",
+            "Necrotic Grasp",
+            "Mark of Blood",
+            "Chillblains",
+            "Putrid Mark",
+            "Reaper's Mark",
+            "Dark Path",
+            "Doom",
+            "Plaguelands"
+        ],
+        "blocks": [
+            "Spectral Armor"
+        ],
+        "heals": [
+            "Well of Blood"
+        ]
+    }
+}

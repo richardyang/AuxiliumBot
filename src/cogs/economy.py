@@ -225,8 +225,14 @@ class Economy(commands.Cog):
         
         # Award random points between 1 to 10*user_level
         points = random.randint(1, 10*user_level)
+
+        # Calculate exp to award based on length of message
+        # Remove emojis
         message_str = re.sub('<[^>]+>', '', message.content).strip()
-        exp = config.EXP_PER_MSG * len(message_str) + 5 * int(len(message.attachments))
+        # Remove links
+        if "http" in message_str:
+            message_str = " ".join([word for word in message_str.split(" ") if not word.startswith("http")])
+        exp = config.EXP_PER_MSG * len(message_str)
 
         # Calculate exp needed for next level. if a level occurs, send a message
         next_level_exp = 150 * ((user_level+1)**2) - (150 * (user_level+1))
