@@ -118,5 +118,40 @@
         "heals": [
             "Well of Blood"
         ]
+    },
+    "gw2_ele": {
+        "icon": "<:elementalist:633545564843147264>",
+        "attacks": [
+            "Lightning Strike",
+            "Flame Strike",
+            "Dragon's Tooth",
+            "Phoenix"
+        ],
+        "blocks": [
+            "Obsidian Flesh",
+            "Arcane Shield"
+        ],
+        "heals": [
+            "Glyph of Elemntal Harmony"
+        ]
+    },
+    "wow_paladin": {
+        "icon": "<:paladin:633548410871349249>",
+        "attacks": [
+            "Consecration",
+            "Seal of Righteousness",
+            "Seal of Wisdom",
+            "Seal of Light",
+            "Holy Shock",
+            "Hammer of Justice",
+            "Hammer of Wrath"
+        ],
+        "blocks": [
+            "Divine Shield"
+        ],
+        "heals": [
+            "Flash of Light",
+            "Holy Light"
+        ]
     }
 }

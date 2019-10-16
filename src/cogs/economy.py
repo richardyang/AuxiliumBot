@@ -40,22 +40,47 @@ class Economy(commands.Cog):
         await self.update_user_data(message)
         # await self.update_monthly_data(message)
 
+    @commands.Cog.listener()
+    async def on_member_join(self, member):
+        # Do nothing if author is bot
+        if message.author.bot:
+            return
+        self.db_cursor.execute('INSERT INTO users VALUES (?,?,?,?)', (str(member.id),1,0,0))
+        self.db.commit()
+
     # Commands
     @commands.command()
-    async def leaderboard(self, ctx):
+    async def leaderboard(self, ctx, board=None):
         channel = ctx.message.channel
         print("Sending leaderboard embed")
         
-        # Get this month's leaderboard
-        current_month = datetime.date.today().strftime("%B_%Y")
-        self.db_cursor.execute('SELECT * FROM {} WHERE id!=? ORDER BY exp_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
-        # self.db_cursor.execute('SELECT * FROM {} ORDER BY exp_this_month DESC'.format(current_month))
-        query_response = self.db_cursor.fetchmany(5)
+        if not board or board.lower() == "global":
+            # Fetch top players by exp and send embed
+            self.db_cursor.execute('SELECT * FROM users WHERE id!=? ORDER BY exp DESC', (str(config.ADMIN_ID),))
+            query_response = self.db_cursor.fetchmany(5)
+            embed = self.generate_global_exp_embed(query_response)
+            await channel.send(embed=embed)
 
-        # Format results as an embed
-        embed = self.generate_exp_embed(query_response)
-        await channel.send(embed=embed)
+            # Fetch top players by points and send embed
+            self.db_cursor.execute('SELECT * FROM users WHERE id!=? ORDER BY points DESC', (str(config.ADMIN_ID),))
+            query_response = self.db_cursor.fetchmany(5)
+            embed = self.generate_global_pts_embed(query_response)
+            await channel.send(embed=embed)
+        else:
+            current_month = datetime.date.today().strftime("%B_%Y")    
+            
+            # Fetch top players by exp and send embed
+            self.db_cursor.execute('SELECT * FROM {} WHERE id!=? ORDER BY exp_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
+            query_response = self.db_cursor.fetchmany(5)
+            embed = self.generate_monthly_exp_embed(query_response)
+            await channel.send(embed=embed)
 
+            # Fetch top players by points and send embed
+            self.db_cursor.execute('SELECT * FROM {} WHERE id!=? ORDER BY points_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
+            query_response = self.db_cursor.fetchmany(5)
+            embed = self.generate_monthly_pts_embed(query_response)
+            await channel.send(embed=embed)
+            
     @commands.command()
     async def profile(self, ctx, user:discord.User=None):
         """
@@ -140,9 +165,9 @@ class Economy(commands.Cog):
         self.db_cursor.execute('UPDATE users SET level=?, exp=?, points=? WHERE id=?', (targ_level, targ_exp, targ_points+amount, str(targ_id)))
         self.db.commit()
 
-        #(src_id INTEGER, dest_id INTEGER, src_pts INTEGER, dest_pts INTEGER, amount INTEGER, ts timestamp)
-        self.db_cursor.execute('INSERT INTO transactions VALUES (?,?,?,?,?,?)', (auth_id, targ_id, auth_points, targ_points, amount, datetime.datetime.now()))
-        self.db.commit()
+        # #(src_id INTEGER, dest_id INTEGER, src_pts INTEGER, dest_pts INTEGER, amount INTEGER, ts timestamp)
+        # self.db_cursor.execute('INSERT INTO transactions VALUES (?,?,?,?,?,?)', (auth_id, targ_id, auth_points, targ_points, amount, datetime.datetime.now()))
+        # self.db.commit()
         
         await ctx.channel.send("Sent {} gold to {}. Your balance is now {}. Their balance is now {}.".format(amount, user.mention, auth_points-amount, targ_points+amount))
         return
@@ -159,31 +184,46 @@ class Economy(commands.Cog):
         # Get this month's exp leaderboard
         current_month = datetime.date.today().strftime("%B_%Y")
         self.db_cursor.execute('SELECT * FROM {} WHERE id!=? ORDER BY exp_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
-        # self.db_cursor.execute('SELECT * FROM {} ORDER BY exp_this_month DESC'.format(current_month))
         query_response = self.db_cursor.fetchmany(5)
         if not query_response:
             print("No monthly exp leaders")
             return
-        exp_embed = self.generate_exp_embed(query_response)
+        mo_exp_embed = self.generate_monthly_exp_embed(query_response)
 
         # Get this month's point leaderboard
         self.db_cursor.execute('SELECT * FROM {} WHERE id!=? ORDER BY points_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
-        # self.db_cursor.execute('SELECT * FROM {} ORDER BY points_this_month DESC'.format(current_month))
         query_response = self.db_cursor.fetchmany(5)
         if not query_response:
             print("No monthly point leaders")
             return
-        pts_embed = self.generate_pts_embed(query_response)
+        mo_pts_embed = self.generate_monthly_pts_embed(query_response)
+
+        # Fetch top players by exp
+        self.db_cursor.execute('SELECT * FROM users WHERE id!=? ORDER BY exp DESC', (str(config.ADMIN_ID),))
+        query_response = self.db_cursor.fetchmany(5)
+        glob_exp_embed = self.generate_global_exp_embed(query_response)
+
+        # Fetch top players by points
+        self.db_cursor.execute('SELECT * FROM users WHERE id!=? ORDER BY points DESC', (str(config.ADMIN_ID),))
+        query_response = self.db_cursor.fetchmany(5)
+        glob_pts_embed = self.generate_global_pts_embed(query_response)
+        
+        embeds = [mo_pts_embed, mo_exp_embed, glob_pts_embed, glob_exp_embed]
 
         # Get the last message in the channel
-        messages = await channel.history(limit=2).flatten()
+        messages = await channel.history(limit=4).flatten()
         # If no messages exist, send the message. Otherwise edit existing messages
         if not messages:
-            await channel.send(embed=exp_embed)
-            await channel.send(embed=pts_embed)
-        else:
-            await messages[1].edit(embed=exp_embed)
-            await messages[0].edit(embed=pts_embed)
+            for embed in embeds:
+                await channel.send(embed=embed)
+        elif len(messages) < len(embeds):
+            for i, message in enumerate(messages):
+                await message.edit(embed=embeds[i])
+            for j in range(len(embeds)-1, len(embeds)-len(messages)-1, -1):
+                await channel.send(embed=embeds[j])
+        elif len(messages) == len(embeds):
+            for i, embed in enumerate(embeds):
+                await messages[i].edit(embed=embeds[i])
     
     # Util functions
     def get_monthly_user_data(self, user_id):
@@ -243,8 +283,28 @@ class Economy(commands.Cog):
         await self.set_global_user_data(user_id, user_level, user_exp+exp, user_points+points)
         await self.set_monthly_user_data(user_id, user_exp_m+exp, user_points_m+points)
         return
+    
+    def generate_global_exp_embed(self, query_response):
+        embed = discord.Embed(title="Most exp on the server:", color=0x0092ff)
+        embed.set_thumbnail(url="https://vignette.wikia.nocookie.net/wowwiki/images/2/2f/Achievement_doublejeopardy.png")
+        for user_info in query_response:
+            user_id, user_level, user_exp, user_points = user_info
+            embed.add_field(name="{} {}".format(config.LEVEL_IMAGES[user_level], self.bot.get_user(user_id).name), 
+                            value="{:,d} exp".format(user_exp), 
+                            inline=False)
+        return embed
 
-    def generate_exp_embed(self, query_response):
+    def generate_global_pts_embed(self, query_response):
+        embed = discord.Embed(title="Most coins on the server:", color=0x0092ff)
+        embed.set_thumbnail(url="https://vignette.wikia.nocookie.net/wowwiki/images/c/c4/Inv_misc_coin_02.png")
+        for user_info in query_response:
+            user_id, user_level, user_exp, user_points = user_info
+            embed.add_field(name="{} {}".format(config.LEVEL_IMAGES[user_level], self.bot.get_user(user_id).name), 
+                            value="{:,d} coins".format(user_points), 
+                            inline=False)
+        return embed
+
+    def generate_monthly_exp_embed(self, query_response):
         embed = discord.Embed(title="Most exp gained this month:", color=0x0092ff)
         embed.set_thumbnail(url="https://vignette.wikia.nocookie.net/wowwiki/images/2/2f/Achievement_doublejeopardy.png")
         for user_info in query_response:
@@ -257,7 +317,7 @@ class Economy(commands.Cog):
                             inline=False)
         return embed
 
-    def generate_pts_embed(self, query_response):
+    def generate_monthly_pts_embed(self, query_response):
         embed = discord.Embed(title="Most coins gained this month:", color=0x0092ff)
         embed.set_thumbnail(url="https://vignette.wikia.nocookie.net/wowwiki/images/c/c4/Inv_misc_coin_02.png")
         for user_info in query_response:

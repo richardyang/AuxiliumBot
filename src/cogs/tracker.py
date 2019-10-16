@@ -110,9 +110,11 @@ class Tracker(commands.Cog):
             
             # Check if the user is currently in any activities and log to db
             if m.activities:
+                print(m.id, m.activities[0].name)
                 # Base64 encode the game name so that it can be easily stored in db
                 await self.update_db(m.id, base64.b64encode(m.activities[0].name.encode()))
-
+                logged_players.append(m.id)
+        print("="*5)
         return
 
     async def update_db(self, user_id, app_id):

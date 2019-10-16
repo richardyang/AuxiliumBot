@@ -12,16 +12,15 @@ class Fun(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         # Open connection to SQLite DB
-        src_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
-        self.db = sqlite3.connect(os.path.join(src_dir, config.DB_NAME+".db"))
+        self.src_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
+        self.db = sqlite3.connect(os.path.join(self.src_dir, config.DB_NAME+".db"))
         self.db_cursor = self.db.cursor()
         # Create `users` table if it does not exist
-        self.db_cursor.execute('''CREATE TABLE IF NOT EXISTS battle (user_id INTEGER PRIMARY KEY, class VARCHAR(5000), wins INTEGER, losses INTEGER)''')
+        self.db_cursor.execute('''CREATE TABLE IF NOT EXISTS battle (user_id INTEGER PRIMARY KEY, class VARCHAR(5000), wins INTEGER, losses INTEGER, pvp INTEGER)''')
         with open("cogs/battle_classes.json", "r") as fp:
             self.battle_classes = json.load(fp)
         self.running_battles = 0
-
-            
+        self.economy_cog = self.bot.get_cog("Economy")
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -66,16 +65,177 @@ class Fun(commands.Cog):
 
         if not query_response:
             # Add new user to table if they do not exist
-            query_response = (str(ctx.author.id), class_str, 0, 0)
-            self.db_cursor.execute('INSERT INTO battle VALUES (?,?,?,?)', query_response)
+            query_response = (str(ctx.author.id), class_str, 0, 0, 0)
+            self.db_cursor.execute('INSERT INTO battle VALUES (?,?,?,?,?)', query_response)
             self.db.commit()
         else:
             # User exists, update their class
-            user_id, old_class_str, wins, losses = query_response
-            self.db_cursor.execute('UPDATE battle SET class=?, wins=?, losses=? WHERE user_id=?', (class_str, wins, losses, user_id))
+            user_id, old_class_str, wins, losses, pvp = query_response
+            self.db_cursor.execute('UPDATE battle SET class=?, wins=?, losses=?, pvp=? WHERE user_id=?', (class_str, wins, losses, pvp, user_id))
             self.db.commit()
         await ctx.channel.send("Your battle class has been set to {}".format(self.battle_classes[class_str]["icon"]))
         return
+
+    @commands.command()
+    async def enablepvp(self, ctx):
+        self.db_cursor.execute('SELECT * FROM battle WHERE user_id=?', (str(ctx.author.id),) )
+        query_response = self.db_cursor.fetchone()
+
+        if not query_response:
+            # Add new user to table if they do not exist
+            await ctx.channel.send("You did not select a class. A random one has been assigned to you. Use the `-setclass` command to change your class.")
+            class_str = random.choice(list(self.battle_classes.keys()))
+            query_response = (str(ctx.author.id), class_str, 0, 0, 1)
+            self.db_cursor.execute('INSERT INTO battle VALUES (?,?,?,?,?)', query_response)
+            self.db.commit()
+        else:
+            # User exists, update their class
+            user_id, class_str, wins, losses, pvp = query_response
+            self.db_cursor.execute('UPDATE battle SET class=?, wins=?, losses=?, pvp=? WHERE user_id=?', (class_str, wins, losses, 1, user_id))
+            self.db.commit()
+        await ctx.channel.send("Warning: you have enabled PvP mode. Anyone can attack you now with the `-pvp` command, and you may win/lose coins from PvP battles. Use the `-disablepvp` command to disable PvP mode.")
+        return
+
+    @commands.command()
+    async def disablepvp(self, ctx):
+        self.db_cursor.execute('SELECT * FROM battle WHERE user_id=?', (str(ctx.author.id),) )
+        query_response = self.db_cursor.fetchone()
+
+        if not query_response:
+            # Add new user to table if they do not exist
+            await ctx.channel.send("You did not select a class. A random one has been assigned to you. Use the `-setclass` command to change your class.")
+            class_str = random.choice(list(self.battle_classes.keys()))
+            query_response = (str(ctx.author.id), class_str, 0, 0, 0)
+            self.db_cursor.execute('INSERT INTO battle VALUES (?,?,?,?,?)', query_response)
+            self.db.commit()
+        else:
+            # User exists, update their class
+            user_id, class_str, wins, losses, pvp = query_response
+            self.db_cursor.execute('UPDATE battle SET class=?, wins=?, losses=?, pvp=? WHERE user_id=?', (class_str, wins, losses, 0, user_id))
+            self.db.commit()
+        await ctx.channel.send("You have disabled PvP mode.")
+        return
+
+    @commands.command()
+    async def pvp(self, ctx, user1:discord.User, wager:int):
+        if self.running_battles > 5:
+            await ctx.channel.send("There are too many battles going on. Wait a bit before initiating another one.")
+            return
+
+        initiator = ctx.message.author
+        target = user1
+        initiator_hp = 100
+        target_hp = 100
+
+        # Get initiator class
+        self.db_cursor.execute('SELECT * FROM battle WHERE user_id=?', (str(initiator.id),) )
+        query_response = self.db_cursor.fetchone()
+        if not query_response or not query_response[4]:
+            await ctx.channel.send("You do not have PvP mode enabled. Type `-enablepvp` or use `-battle` to fight without betting.")
+            return
+        else:
+            initiator_class = query_response[1]
+            initiator_icon = self.battle_classes[initiator_class]["icon"]
+            initiator_attacks = self.battle_classes[initiator_class]["attacks"]
+            initiator_blocks = self.battle_classes[initiator_class]["blocks"]
+            initiator_heals = self.battle_classes[initiator_class]["heals"]
+
+        # Get target class
+        self.db_cursor.execute('SELECT * FROM battle WHERE user_id=?', (str(target.id),) )
+        query_response = self.db_cursor.fetchone()
+        if not query_response or not query_response[4]:
+            await ctx.channel.send("Your opponent does not have PvP mode enabled. Use `-battle` to fight without betting.")
+            return
+        else:
+            target_class = query_response[1]
+            target_icon = self.battle_classes[target_class]["icon"]
+            target_attacks = self.battle_classes[target_class]["attacks"]
+            target_blocks = self.battle_classes[target_class]["blocks"]
+            target_heals = self.battle_classes[target_class]["heals"]
+
+        wager = abs(wager)
+        # Check if initiator has enough coins to place the wager
+        iid, ilvl, iexp, ipoints = self.economy_cog.get_global_user_data(initiator.id)
+        if wager > ipoints:
+            await ctx.channel.send("You don't have enough coins to initiate this battle. Your current balance is {}.".format(ipoints))
+            return
+        # Check if wager is not > 10% of the target's coins
+        tid, tlvl, texp, tpoints = self.economy_cog.get_global_user_data(target.id)
+        if wager > int(0.1 * tpoints):
+            await ctx.channel.send("You cannot wager more than 10 percent of your opponent's current balance. Their current balance is {}, and the max wager is {}.".format(tpoints, int(0.1*tpoints)))
+            return
+        
+        self.running_battles += 1
+        
+        log = "💀 PvP Battle: {} vs {} 💀\n".format(initiator.name, target.name)
+        embed = discord.Embed(description=log, color=0x008000)
+        embed.add_field(name=initiator.name, value="100/100", inline=True)
+        embed.add_field(name=target.name, value="100/100", inline=True)
+        msg = await ctx.channel.send(embed=embed)
+
+        initiatorTurn = True
+        while initiator_hp > 0 and target_hp > 0:
+            if initiatorTurn:
+                action = np.random.choice(["attacks", "blocks", "heals"], p=[0.8, 0.1, 0.1])
+                if action == "attacks":
+                    dmg = random.randint(10,30)
+                    skill = random.choice(initiator_attacks)
+                    target_hp = max(0, target_hp-dmg)
+                    dmg_str = "__**{}**__ hit __**{}**__ for **{}** dmg using {}".format(initiator.name, target.name, dmg, skill)
+                elif action == "blocks":
+                    skill = random.choice(target_blocks)
+                    dmg_str = "__**{}**__ blocked __**{}**__'s attack using {}".format(target.name, initiator.name, skill)
+                elif action == "heals":
+                    dmg = random.randint(10,30)
+                    skill = random.choice(initiator_heals)
+                    initiator_hp = min(100, initiator_hp+dmg)
+                    dmg_str = "__**{}**__ healed for **{}** dmg using {}".format(initiator.name, dmg, skill)
+                embed = discord.Embed(description="{} {}".format(log, dmg_str), color=0x008000)
+                embed.add_field(name=initiator.name + " " + initiator_icon, value="{}/100".format(initiator_hp), inline=True)
+                embed.add_field(name=target.name + " " + target_icon, value="{}/100".format(target_hp), inline=True)
+                log += dmg_str + "\n"
+            else:
+                action = np.random.choice(["attacks", "blocks", "heals"], p=[0.8, 0.1, 0.1])
+                if action == "attacks":
+                    dmg = random.randint(10,30)
+                    skill = random.choice(target_attacks)
+                    initiator_hp = max(0, initiator_hp-dmg)
+                    dmg_str = "__**{}**__ hit __**{}**__ for **{}** dmg using {}".format(target.name, initiator.name, dmg, skill)
+                elif action == "blocks":
+                    skill = random.choice(initiator_blocks)
+                    dmg_str = "__**{}**__ blocked __**{}**__'s attack using {}".format(initiator.name, target.name, skill)
+                elif action == "heals":
+                    dmg = random.randint(10,30)
+                    skill = random.choice(target_heals)
+                    target_hp = min(100, target_hp+dmg)
+                    dmg_str = "__**{}**__ healed for **{}** dmg using {}".format(target.name, dmg, skill)
+                embed = discord.Embed(description="{} {}".format(log, dmg_str), color=0xff0000)
+                embed.add_field(name=initiator.name + " " + initiator_icon, value="{}/100".format(initiator_hp), inline=True)
+                embed.add_field(name=target.name + " " + target_icon, value="{}/100".format(target_hp), inline=True)
+                log += dmg_str + "\n"
+            
+            await msg.edit(embed=embed)
+            initiatorTurn = not(initiatorTurn)
+            time.sleep(1.5)
+        
+        if initiator_hp == 0:
+            embed = discord.Embed(description="{} \n 🏆 __**{}**__ has won the battle and {} coins!".format(log, target.name, wager), color=0xff0000)
+            embed.add_field(name=initiator.name + " " + initiator_icon, value="{}/100".format(initiator_hp), inline=True)
+            embed.add_field(name=target.name + " " + target_icon, value="{}/100".format(target_hp), inline=True)
+            await self.economy_cog.set_global_user_data(tid, tlvl, texp, tpoints+wager)
+            await self.economy_cog.set_global_user_data(iid, ilvl, iexp, ipoints-wager)
+
+        else:
+            embed = discord.Embed(description="{} \n 🏆 __**{}**__ has won the battle and {} coins!".format(log, initiator.name, wager), color=0x008000)
+            embed.add_field(name=initiator.name + " " + initiator_icon, value="{}/100".format(initiator_hp), inline=True)
+            embed.add_field(name=target.name + " " + target_icon, value="{}/100".format(target_hp), inline=True)
+            await self.economy_cog.set_global_user_data(tid, tlvl, texp, tpoints-wager)
+            await self.economy_cog.set_global_user_data(iid, ilvl, iexp, ipoints+wager)
+
+        await msg.edit(embed=embed)
+        self.running_battles -= 1
+        return 
+
 
     @commands.command()
     async def battle(self, ctx, user1:discord.User=None, user2:discord.User=None):
@@ -146,7 +306,7 @@ class Fun(commands.Cog):
                     skill = random.choice(target_blocks)
                     dmg_str = "__**{}**__ blocked __**{}**__'s attack using {}".format(target.name, initiator.name, skill)
                 elif action == "heals":
-                    dmg = random.randint(5,20)
+                    dmg = random.randint(10,40)
                     skill = random.choice(initiator_heals)
                     initiator_hp = min(100, initiator_hp+dmg)
                     dmg_str = "__**{}**__ healed for **{}** dmg using {}".format(initiator.name, dmg, skill)
@@ -165,7 +325,7 @@ class Fun(commands.Cog):
                     skill = random.choice(initiator_blocks)
                     dmg_str = "__**{}**__ blocked __**{}**__'s attack using {}".format(initiator.name, target.name, skill)
                 elif action == "heals":
-                    dmg = random.randint(5,20)
+                    dmg = random.randint(10,40)
                     skill = random.choice(target_heals)
                     target_hp = min(100, target_hp+dmg)
                     dmg_str = "__**{}**__ healed for **{}** dmg using {}".format(target.name, dmg, skill)
