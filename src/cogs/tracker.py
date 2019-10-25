@@ -110,9 +110,16 @@ class Tracker(commands.Cog):
             
             # Check if the user is currently in any activities and log to db
             if m.activities:
-                print(m.id, m.activities[0].name)
+                game_name = None
+                for activity in m.activities:
+                    if str(activity.type) == "ActivityType.playing":
+                        game_name = activity.name
+                        break
+                if not game_name:
+                    continue
+                # print(m.id, game_name)
                 # Base64 encode the game name so that it can be easily stored in db
-                await self.update_db(m.id, base64.b64encode(m.activities[0].name.encode()))
+                await self.update_db(m.id, base64.b64encode(game_name.encode()))
                 logged_players.append(m.id)
         print("="*5)
         return
