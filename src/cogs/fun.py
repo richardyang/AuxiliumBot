@@ -3,21 +3,25 @@ import random
 import discord
 import time
 import config
-import sqlite3
+import pymysql
 import json
 import numpy as np
 
+from contextlib import closing
 from discord.ext import commands
 
 class Fun(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        # Open connection to SQLite DB
+
         self.src_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
-        self.db = sqlite3.connect(os.path.join(self.src_dir, config.DB_NAME+".db"))
-        self.db_cursor = self.db.cursor()
-        # Create `users` table if it does not exist
-        self.db_cursor.execute('''CREATE TABLE IF NOT EXISTS battle (user_id INTEGER PRIMARY KEY, class VARCHAR(5000), wins INTEGER, losses INTEGER, pvp INTEGER)''')
+        self.db = self.bot.get_cog('Database').db
+
+        with closing(self.db.cursor()) as cursor:
+            cursor = self.db.cursor()
+            # Create `users` table if it does not exist
+            cursor.execute('''CREATE TABLE IF NOT EXISTS battle (user_id INTEGER PRIMARY KEY, class VARCHAR(5000), wins INTEGER, losses INTEGER, pvp INTEGER)''')
+        
         with open("cogs/battle_classes.json", "r") as fp:
             self.battle_classes = json.load(fp)
         self.running_battles = 0
@@ -98,60 +102,68 @@ class Fun(commands.Cog):
         if class_str not in self.battle_classes.keys():
             await ctx.channel.send("{} is not a valid class option, choose from: `{}`".format(class_str, ', '.join(list(self.battle_classes.keys()))))
             return
-        
-        self.db_cursor.execute('SELECT * FROM battle WHERE user_id=?', (str(ctx.author.id),) )
-        query_response = self.db_cursor.fetchone()
+        with closing(self.db.cursor()) as cursor:
+            cursor.execute('SELECT * FROM battle WHERE user_id=%s', (str(ctx.author.id),) )
+            query_response = cursor.fetchone()
 
         if not query_response:
             # Add new user to table if they do not exist
             query_response = (str(ctx.author.id), class_str, 0, 0, 0)
-            self.db_cursor.execute('INSERT INTO battle VALUES (?,?,?,?,?)', query_response)
-            self.db.commit()
+            with closing(self.db.cursor()) as cursor:
+                cursor.execute('INSERT INTO battle VALUES (%s,%s,%s,%s,%s)', query_response)
+                self.db.commit()
         else:
             # User exists, update their class
             user_id, old_class_str, wins, losses, pvp = query_response
-            self.db_cursor.execute('UPDATE battle SET class=?, wins=?, losses=?, pvp=? WHERE user_id=?', (class_str, wins, losses, pvp, user_id))
-            self.db.commit()
+            with closing(self.db.cursor()) as cursor:
+                cursor.execute('UPDATE battle SET class=%s, wins=%s, losses=%s, pvp=%s WHERE user_id=%s', (class_str, wins, losses, pvp, user_id))
+                self.db.commit()
         await ctx.channel.send("Your battle class has been set to {}".format(self.battle_classes[class_str]["icon"]))
         return
 
     @commands.command()
     async def enablepvp(self, ctx):
-        self.db_cursor.execute('SELECT * FROM battle WHERE user_id=?', (str(ctx.author.id),) )
-        query_response = self.db_cursor.fetchone()
+        with closing(self.db.cursor()) as cursor:
+            cursor.execute('SELECT * FROM battle WHERE user_id=%s', (str(ctx.author.id),) )
+            query_response = cursor.fetchone()
 
         if not query_response:
             # Add new user to table if they do not exist
             await ctx.channel.send("You did not select a class. A random one has been assigned to you. Use the `-setclass` command to change your class.")
             class_str = random.choice(list(self.battle_classes.keys()))
             query_response = (str(ctx.author.id), class_str, 0, 0, 1)
-            self.db_cursor.execute('INSERT INTO battle VALUES (?,?,?,?,?)', query_response)
-            self.db.commit()
+            with closing(self.db.cursor()) as cursor:
+                cursor.execute('INSERT INTO battle VALUES (%s,%s,%s,%s,%s)', query_response)
+                self.db.commit()
         else:
             # User exists, update their class
             user_id, class_str, wins, losses, pvp = query_response
-            self.db_cursor.execute('UPDATE battle SET class=?, wins=?, losses=?, pvp=? WHERE user_id=?', (class_str, wins, losses, 1, user_id))
-            self.db.commit()
+            with closing(self.db.cursor()) as cursor:
+                cursor.execute('UPDATE battle SET class=%s, wins=%s, losses=%s, pvp=%s WHERE user_id=%s', (class_str, wins, losses, 1, user_id))
+                self.db.commit()
         await ctx.channel.send("Warning: you have enabled PvP mode. Anyone can attack you now with the `-pvp` command, and you may win/lose coins from PvP battles. Use the `-disablepvp` command to disable PvP mode.")
         return
 
     @commands.command()
     async def disablepvp(self, ctx):
-        self.db_cursor.execute('SELECT * FROM battle WHERE user_id=?', (str(ctx.author.id),) )
-        query_response = self.db_cursor.fetchone()
+        with closing(self.db.cursor()) as cursor:
+            cursor.execute('SELECT * FROM battle WHERE user_id=%s', (str(ctx.author.id),) )
+            query_response = cursor.fetchone()
 
         if not query_response:
             # Add new user to table if they do not exist
             await ctx.channel.send("You did not select a class. A random one has been assigned to you. Use the `-setclass` command to change your class.")
             class_str = random.choice(list(self.battle_classes.keys()))
             query_response = (str(ctx.author.id), class_str, 0, 0, 0)
-            self.db_cursor.execute('INSERT INTO battle VALUES (?,?,?,?,?)', query_response)
-            self.db.commit()
+            with closing(self.db.cursor()) as cursor:
+                cursor.execute('INSERT INTO battle VALUES (%s,%s,%s,%s,%s)', query_response)
+                self.db.commit()
         else:
             # User exists, update their class
             user_id, class_str, wins, losses, pvp = query_response
-            self.db_cursor.execute('UPDATE battle SET class=?, wins=?, losses=?, pvp=? WHERE user_id=?', (class_str, wins, losses, 0, user_id))
-            self.db.commit()
+            with closing(self.db.cursor()) as cursor:
+                cursor.execute('UPDATE battle SET class=%s, wins=%s, losses=%s, pvp=%s WHERE user_id=%s', (class_str, wins, losses, 0, user_id))
+                self.db.commit()
         await ctx.channel.send("You have disabled PvP mode.")
         return
 
@@ -167,8 +179,9 @@ class Fun(commands.Cog):
         target_hp = 100
 
         # Get initiator class
-        self.db_cursor.execute('SELECT * FROM battle WHERE user_id=?', (str(initiator.id),) )
-        query_response = self.db_cursor.fetchone()
+        with closing(self.db.cursor()) as cursor:
+            cursor.execute('SELECT * FROM battle WHERE user_id=%s', (str(initiator.id),) )
+            query_response = cursor.fetchone()
         if not query_response or not query_response[4]:
             await ctx.channel.send("You do not have PvP mode enabled. Type `-enablepvp` or use `-battle` to fight without betting.")
             return
@@ -180,8 +193,9 @@ class Fun(commands.Cog):
             initiator_heals = self.battle_classes[initiator_class]["heals"]
 
         # Get target class
-        self.db_cursor.execute('SELECT * FROM battle WHERE user_id=?', (str(target.id),) )
-        query_response = self.db_cursor.fetchone()
+        with closing(self.db.cursor()) as cursor:
+            cursor.execute('SELECT * FROM battle WHERE user_id=%s', (str(target.id),) )
+            query_response = cursor.fetchone()
         if not query_response or not query_response[4]:
             await ctx.channel.send("Your opponent does not have PvP mode enabled. Use `-battle` to fight without betting.")
             return
@@ -294,8 +308,9 @@ class Fun(commands.Cog):
         target_hp = 100
 
         # Get initiator class
-        self.db_cursor.execute('SELECT * FROM battle WHERE user_id=?', (str(initiator.id),) )
-        query_response = self.db_cursor.fetchone()
+        with closing(self.db.cursor()) as cursor:
+            cursor.execute('SELECT * FROM battle WHERE user_id=%s', (str(initiator.id),) )
+            query_response = cursor.fetchone()
         if not query_response:
             initiator_class = random.choice(list(self.battle_classes.keys()))
         else:
@@ -306,8 +321,9 @@ class Fun(commands.Cog):
         initiator_heals = self.battle_classes[initiator_class]["heals"]
 
         # Get target class
-        self.db_cursor.execute('SELECT * FROM battle WHERE user_id=?', (str(target.id),) )
-        query_response = self.db_cursor.fetchone()
+        with closing(self.db.cursor()) as cursor:
+            cursor.execute('SELECT * FROM battle WHERE user_id=%s', (str(target.id),) )
+            query_response = cursor.fetchone()
         if not query_response:
             target_class = random.choice(list(self.battle_classes.keys()))
         else:

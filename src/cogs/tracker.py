@@ -1,20 +1,20 @@
 import os
 import base64
-import sqlite3
+import pymysql
 import datetime
 import config
 import discord
+from contextlib import closing
 from discord.ext import tasks, commands
 
 class Tracker(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        # Open connection to SQLite DB
-        src_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
-        self.db = sqlite3.connect(os.path.join(src_dir, config.DB_NAME+".db"))
-        self.db_cursor = self.db.cursor()
-        # Create `gametime` table if it does not exist
-        self.db_cursor.execute('''CREATE TABLE IF NOT EXISTS gametime (user_id INTEGER, app_id VARCHAR(5000), played INTEGER)''')
+        self.db = self.bot.get_cog('Database').db
+        with closing(self.db.cursor()) as cursor:
+            # Create `gametime` table if it does not exist
+            cursor.execute('''CREATE TABLE IF NOT EXISTS gametime (user_id INTEGER, app_id VARCHAR(5000), played INTEGER)''')
+        
         self.get_activity.start()
 
     @commands.command()
@@ -32,8 +32,9 @@ class Tracker(commands.Cog):
             who = "{}'s".format(user.display_name)
 
         # Get data from db
-        self.db_cursor.execute('SELECT * FROM gametime WHERE user_id=? ORDER BY played DESC LIMIT 5', (str(user_id),))
-        query_response = self.db_cursor.fetchall()
+        with closing(self.db.cursor()) as cursor:
+            cursor.execute('SELECT * FROM gametime WHERE user_id=%s ORDER BY played DESC LIMIT 5', (str(user_id),))
+            query_response = cursor.fetchall()
         # If no game data found in db, send a response
         if not query_response:
             if not user:
@@ -71,8 +72,9 @@ class Tracker(commands.Cog):
         """
         -guildtopgames -> returns the top games (up to 5) for the entire guild
         """
-        self.db_cursor.execute('SELECT app_id, SUM(played) played_sum FROM gametime GROUP BY app_id ORDER BY played_sum DESC LIMIT 5')
-        query_response = self.db_cursor.fetchall()
+        with closing(self.db.cursor()) as cursor:
+            cursor.execute('SELECT app_id, SUM(played) played_sum FROM gametime GROUP BY app_id ORDER BY played_sum DESC LIMIT 5')
+            query_response = cursor.fetchall()
 
         response = ""
         for i, game in enumerate(query_response):
@@ -126,17 +128,20 @@ class Tracker(commands.Cog):
 
     async def update_db(self, user_id, app_id):
         # Fetch user info from database
-        self.db_cursor.execute('SELECT * FROM gametime WHERE user_id=? AND app_id=?', (user_id, app_id))
-        query_response = self.db_cursor.fetchone()
+        with closing(self.db.cursor()) as cursor:
+            cursor.execute('SELECT * FROM gametime WHERE user_id=%s AND app_id=%s', (user_id, app_id))
+            query_response = cursor.fetchone()
         
         if not query_response:
-            self.db_cursor.execute('INSERT INTO gametime VALUES (?,?,?)', (user_id, app_id, 1))
-            self.db.commit()
+            with closing(self.db.cursor()) as cursor:
+                cursor.execute('INSERT INTO gametime VALUES (%s,%s,%s)', (user_id, app_id, 1))
+                self.db.commit()
             return
         
         user_id, app_id, gametime = query_response
-        self.db_cursor.execute('UPDATE gametime SET played=? WHERE user_id=? AND app_id=?', (str(gametime + 1), user_id, app_id))
-        self.db.commit()
+        with closing(self.db.cursor()) as cursor:
+            cursor.execute('UPDATE gametime SET played=%s WHERE user_id=%s AND app_id=%s', (str(gametime + 1), user_id, app_id))
+            self.db.commit()
         return
 
 def setup(bot):

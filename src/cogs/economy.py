@@ -1,7 +1,7 @@
 import os
 import datetime
 import base64
-import sqlite3
+import pymysql
 import config
 import random
 import re
@@ -13,15 +13,13 @@ from discord.ext import tasks, commands
 class Economy(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        # Open connection to SQLite DB
-        src_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
-        self.db = sqlite3.connect(os.path.join(src_dir, config.DB_NAME+".db"))
+        self.db = self.bot.get_cog('Database').db
         
         with closing(self.db.cursor()) as cursor:
             # Create `users` table if it does not exist
-            cursor.execute('''CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, level INTEGER, exp INTEGER, points INTEGER)''')
+            cursor.execute('''CREATE TABLE IF NOT EXISTS users (id BIGINT PRIMARY KEY, level INTEGER, exp INTEGER, points INTEGER)''')
             # Create `transactions` 
-            cursor.execute('''CREATE TABLE IF NOT EXISTS transactions (src_id INTEGER, dest_id INTEGER, src_pts INTEGER, dest_pts INTEGER, amount INTEGER, ts timestamp)''')
+            cursor.execute('''CREATE TABLE IF NOT EXISTS transactions (src_id BIGINT, dest_id BIGINT, src_pts INTEGER, dest_pts INTEGER, amount INTEGER, ts timestamp)''')
             
         # Start the leaderboard update background task
         # self.lb_update.start()
@@ -45,9 +43,9 @@ class Economy(commands.Cog):
     async def on_member_remove(self, member):
         current_month = datetime.date.today().strftime("%B_%Y")  
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('UPDATE users SET level=?, exp=?, points=? WHERE id=?', (1, 0, 0, member.id))
+            cursor.execute('UPDATE users SET level=%s, exp=%s, points=%s WHERE id=%s', (1, 0, 0, member.id))
             self.db.commit()
-            cursor.execute('UPDATE {} SET exp_this_month=?, points_this_month=? WHERE id=?'.format(current_month), (1, 0, member.id))
+            cursor.execute('UPDATE {} SET exp_this_month=%s, points_this_month=%s WHERE id=%s'.format(current_month), (1, 0, member.id))
             self.db.commit()
 
     @commands.Cog.listener()
@@ -56,7 +54,7 @@ class Economy(commands.Cog):
         if message.author.bot:
             return
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('INSERT INTO users VALUES (?,?,?,?)', (str(member.id),1,0,0))
+            cursor.execute('INSERT INTO users VALUES (%s,%s,%s,%s)', (str(member.id),1,0,0))
             self.db.commit()
 
     # Commands
@@ -76,10 +74,10 @@ class Economy(commands.Cog):
             print(user_id, self.bot.get_user(user_id))
             if not self.bot.get_user(user_id):
                 with closing(self.db.cursor()) as cursor:
-                    cursor.execute('UPDATE users SET level=?, exp=?, points=? WHERE id=?', (1, 0, 0, user_id))
+                    cursor.execute('UPDATE users SET level=%s, exp=%s, points=%s WHERE id=%s', (1, 0, 0, user_id))
                     self.db.commit()
                 with closing(self.db.cursor()) as cursor:
-                    cursor.execute('UPDATE {} SET exp_this_month=?, points_this_month=? WHERE id=?'.format(current_month), (1, 0, user_id))
+                    cursor.execute('UPDATE {} SET exp_this_month=%s, points_this_month=%s WHERE id=%s'.format(current_month), (1, 0, user_id))
                     self.db.commit()
                 users_purged += 1
         await ctx.message.channel.send("{} users purged".format(users_purged))
@@ -93,14 +91,14 @@ class Economy(commands.Cog):
         # if not board or board.lower() == "global":
         # Fetch top players by exp and send embed
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('SELECT * FROM users WHERE id!=? ORDER BY exp DESC', (str(config.ADMIN_ID),))
+            cursor.execute('SELECT * FROM users WHERE id!=%s ORDER BY exp DESC', (str(config.ADMIN_ID),))
             query_response = cursor.fetchmany(5)
         embed = self.generate_global_exp_embed(query_response)
         await channel.send(embed=embed)
 
         # Fetch top players by points and send embed
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('SELECT * FROM users WHERE id!=? ORDER BY points DESC', (str(config.ADMIN_ID),))
+            cursor.execute('SELECT * FROM users WHERE id!=%s ORDER BY points DESC', (str(config.ADMIN_ID),))
             query_response = cursor.fetchmany(5)
         embed = self.generate_global_pts_embed(query_response)
         await channel.send(embed=embed)
@@ -109,14 +107,14 @@ class Economy(commands.Cog):
         
         # # Fetch top players by exp and send embed
         # with closing(self.db.cursor()) as cursor:
-        #     cursor.execute('SELECT * FROM {} WHERE id!=? ORDER BY exp_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
+        #     cursor.execute('SELECT * FROM {} WHERE id!=%s ORDER BY exp_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
         #     query_response = cursor.fetchmany(5)
         # embed = self.generate_monthly_exp_embed(query_response)
         # await channel.send(embed=embed)
 
         # # Fetch top players by points and send embed
         # with closing(self.db.cursor()) as cursor:
-        #     cursor.execute('SELECT * FROM {} WHERE id!=? ORDER BY points_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
+        #     cursor.execute('SELECT * FROM {} WHERE id!=%s ORDER BY points_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
         #     query_response = cursor.fetchmany(5)
         # embed = self.generate_monthly_pts_embed(query_response)
         # await channel.send(embed=embed)
@@ -132,13 +130,13 @@ class Economy(commands.Cog):
             user = ctx.author
 
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('SELECT * FROM users WHERE id=?', (str(user.id),) )
+            cursor.execute('SELECT * FROM users WHERE id=%s', (str(user.id),) )
             query_response = cursor.fetchone()
         user_id, user_level, user_exp, user_points = query_response
         profile_str = "Level {} - {:,d} exp - {:,d} coins \n".format(config.LEVEL_IMAGES[user_level], user_exp, user_points)
 
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('SELECT * FROM gametime WHERE user_id=? ORDER BY played DESC LIMIT 1', (str(user.id),))
+            cursor.execute('SELECT * FROM gametime WHERE user_id=%s ORDER BY played DESC LIMIT 1', (str(user.id),))
             query_response = cursor.fetchone()
 
         if query_response:
@@ -163,7 +161,7 @@ class Economy(commands.Cog):
 
         # Try to get primary award
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('SELECT * FROM users_awards_primary WHERE user_id=?', (str(user.id),))
+            cursor.execute('SELECT * FROM users_awards_primary WHERE user_id=%s', (str(user.id),))
             award_response = cursor.fetchone()
 
         embed = discord.Embed(description=profile_str+game_str)
@@ -171,7 +169,7 @@ class Economy(commands.Cog):
         if award_response:
             user_id, award_name = award_response
             with closing(self.db.cursor()) as cursor:
-                cursor.execute('SELECT * FROM awards WHERE award_id=?', (award_name,))
+                cursor.execute('SELECT * FROM awards WHERE award_id=%s', (award_name,))
                 award_name, award_img = cursor.fetchone()
             award_img = base64.b64decode(award_img).decode()
             print(award_img)
@@ -190,7 +188,7 @@ class Economy(commands.Cog):
             return
         
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('SELECT * FROM users WHERE id=?', (str(ctx.author.id),) )
+            cursor.execute('SELECT * FROM users WHERE id=%s', (str(ctx.author.id),) )
             query_response = cursor.fetchone()
         auth_id, auth_level, auth_exp, auth_points = query_response
 
@@ -199,7 +197,7 @@ class Economy(commands.Cog):
             return
 
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('SELECT * FROM users WHERE id=?', (str(user.id),) )
+            cursor.execute('SELECT * FROM users WHERE id=%s', (str(user.id),) )
             query_response = cursor.fetchone()
         if not query_response:
             await ctx.channel.send("User doesn't exist.")
@@ -207,14 +205,14 @@ class Economy(commands.Cog):
         targ_id, targ_level, targ_exp, targ_points = query_response
         
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('UPDATE users SET level=?, exp=?, points=? WHERE id=?', (auth_level, auth_exp, auth_points-amount, str(auth_id)))
+            cursor.execute('UPDATE users SET level=%s, exp=%s, points=%s WHERE id=%s', (auth_level, auth_exp, auth_points-amount, str(auth_id)))
             self.db.commit()
             
-            cursor.execute('UPDATE users SET level=?, exp=?, points=? WHERE id=?', (targ_level, targ_exp, targ_points+amount, str(targ_id)))
+            cursor.execute('UPDATE users SET level=%s, exp=%s, points=%s WHERE id=%s', (targ_level, targ_exp, targ_points+amount, str(targ_id)))
             self.db.commit()
 
         # #(src_id INTEGER, dest_id INTEGER, src_pts INTEGER, dest_pts INTEGER, amount INTEGER, ts timestamp)
-        # self.db_cursor.execute('INSERT INTO transactions VALUES (?,?,?,?,?,?)', (auth_id, targ_id, auth_points, targ_points, amount, datetime.datetime.now()))
+        # self.db_cursor.execute('INSERT INTO transactions VALUES (%s,%s,%s,%s,%s,%s)', (auth_id, targ_id, auth_points, targ_points, amount, datetime.datetime.now()))
         # self.db.commit()
         
         await ctx.channel.send("Sent {} gold to {}. Your balance is now {}. Their balance is now {}.".format(amount, user.mention, auth_points-amount, targ_points+amount))
@@ -231,7 +229,7 @@ class Economy(commands.Cog):
         # Get this month's exp leaderboard
         current_month = datetime.date.today().strftime("%B_%Y")
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('SELECT * FROM {} WHERE id!=? ORDER BY exp_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
+            cursor.execute('SELECT * FROM {} WHERE id!=%s ORDER BY exp_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
             query_response = cursor.fetchmany(5)
         if not query_response:
             print("No monthly exp leaders")
@@ -240,7 +238,7 @@ class Economy(commands.Cog):
 
         # Get this month's point leaderboard
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('SELECT * FROM {} WHERE id!=? ORDER BY points_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
+            cursor.execute('SELECT * FROM {} WHERE id!=%s ORDER BY points_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
             query_response = cursor.fetchmany(5)
         if not query_response:
             print("No monthly point leaders")
@@ -249,13 +247,13 @@ class Economy(commands.Cog):
 
         # Fetch top players by exp
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('SELECT * FROM users WHERE id!=? ORDER BY exp DESC', (str(config.ADMIN_ID),))
+            cursor.execute('SELECT * FROM users WHERE id!=%s ORDER BY exp DESC', (str(config.ADMIN_ID),))
             query_response = cursor.fetchmany(5)
         glob_exp_embed = self.generate_global_exp_embed(query_response)
 
         # Fetch top players by points
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('SELECT * FROM users WHERE id!=? ORDER BY points DESC', (str(config.ADMIN_ID),))
+            cursor.execute('SELECT * FROM users WHERE id!=%s ORDER BY points DESC', (str(config.ADMIN_ID),))
             query_response = cursor.fetchmany(5)
         glob_pts_embed = self.generate_global_pts_embed(query_response)
         
@@ -275,39 +273,39 @@ class Economy(commands.Cog):
     def get_monthly_user_data(self, user_id):
         current_month = datetime.date.today().strftime("%B_%Y")
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('SELECT * FROM {} WHERE id=?'.format(current_month), (user_id, ))
+            cursor.execute('SELECT * FROM {} WHERE id=%s'.format(current_month), (user_id, ))
             query_response = cursor.fetchone()
         if not query_response:
             # Add new user to table if they do not exist
             query_response = (user_id, 0, 0)
             with closing(self.db.cursor()) as cursor:
-                cursor.execute('INSERT INTO {} VALUES (?,?,?)'.format(current_month), query_response)
+                cursor.execute('INSERT INTO {} VALUES (%s,%s,%s)'.format(current_month), query_response)
                 self.db.commit()
         return query_response
 
     def get_global_user_data(self, user_id):
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('SELECT * FROM users WHERE id=?', (user_id,) )
+            cursor.execute('SELECT * FROM users WHERE id=%s', (user_id,) )
             query_response = cursor.fetchone()
         # Add new user to table if they do not exist
         if not query_response:
             # Add new user to table if they do not exist
             query_response = (user_id, 1, 0, 0)
             with closing(self.db.cursor()) as cursor:
-                cursor.execute('INSERT INTO users VALUES (?,?,?,?)', query_response)
+                cursor.execute('INSERT INTO users VALUES (%s,%s,%s,%s)', query_response)
                 self.db.commit()
         return query_response
 
     async def set_global_user_data(self, user_id, user_level, user_exp, user_points):
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('UPDATE users SET level=?, exp=?, points=? WHERE id=?', (user_level, user_exp, user_points, user_id))
+            cursor.execute('UPDATE users SET level=%s, exp=%s, points=%s WHERE id=%s', (user_level, user_exp, user_points, user_id))
             self.db.commit()
         return
 
     async def set_monthly_user_data(self, user_id, user_exp, user_points):
         current_month = datetime.date.today().strftime("%B_%Y")
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('UPDATE {} SET exp_this_month=?, points_this_month=? WHERE id=?'.format(current_month), (user_exp, user_points, user_id))
+            cursor.execute('UPDATE {} SET exp_this_month=%s, points_this_month=%s WHERE id=%s'.format(current_month), (user_exp, user_points, user_id))
             self.db.commit()
         return
 
@@ -363,7 +361,7 @@ class Economy(commands.Cog):
             user_id, user_exp, user_points = user_info
             # Monthly leaderboard doesn't have user level, so fetch from `users` table
             with closing(self.db.cursor()) as cursor:
-                cursor.execute('SELECT level FROM users WHERE id=?', (user_id,) )
+                cursor.execute('SELECT level FROM users WHERE id=%s', (user_id,) )
                 user_level = cursor.fetchone()[0]
             embed.add_field(name="{} {}".format(config.LEVEL_IMAGES[user_level], self.bot.get_user(user_id).name), 
                             value="{:,d} exp".format(user_exp), 
@@ -377,7 +375,7 @@ class Economy(commands.Cog):
             user_id, user_exp, user_points = user_info
             # Monthly leaderboard doesn't have user level, so fetch from `users` table
             with closing(self.db.cursor()) as cursor:
-                cursor.execute('SELECT level FROM users WHERE id=?', (user_id,) )
+                cursor.execute('SELECT level FROM users WHERE id=%s', (user_id,) )
                 user_level = cursor.fetchone()[0]
             embed.add_field(name="{} {}".format(config.LEVEL_IMAGES[user_level], self.bot.get_user(user_id).name), 
                             value="{:,d} coins".format(user_points), 

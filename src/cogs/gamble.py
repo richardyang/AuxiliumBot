@@ -13,9 +13,9 @@ class Gamble(commands.Cog):
     @commands.command(name='coinflip')
     async def coinflip(self, ctx, bet=0):
         bet = abs(bet)
-        if bet > 5000:
-            await ctx.message.channel.send("Setting your wager amount to the max of 5k.")
-            bet = 5000
+        # if bet > 5000:
+        #     await ctx.message.channel.send("Setting your wager amount to the max of 5k.")
+        #     bet = 5000
 
         user_id, level, exp, points = self.economy_cog.get_global_user_data(ctx.author.id)
         if points < bet:
@@ -23,7 +23,7 @@ class Gamble(commands.Cog):
             return
 
         r = random.randint(0,100)
-        if r < 47:
+        if r < 40:
             coin = discord.File(os.path.join(self.src_dir,'img/heads.png'))
             if bet:
                 await ctx.message.channel.send("Heads! You won {} coins.".format(bet), file=coin)

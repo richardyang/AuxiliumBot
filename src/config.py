@@ -8,6 +8,13 @@ ADMIN_ID = 83607236668030976
 
 RATE_CHANNELS = [626243249664819210]
 
+# DB creds
+DB_HOST = 'auxilium-db.citnginpehrc.us-west-2.rds.amazonaws.com'
+DB_PORT = 3306
+DB_USER = 'admin'
+DB_PASS = 'Soulrez123'
+DB_INST = 'auxilium-db'
+
 LEVEL_IMAGES = {
 1: "<:1_:625530366010195972>",
 2: "<:2_:625537488894558238>",
