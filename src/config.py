@@ -9,7 +9,7 @@ ADMIN_ID = 83607236668030976
 RATE_CHANNELS = [626243249664819210]
 
 # DB creds
-DB_HOST = 'auxilium-db.citnginpehrc.us-west-2.rds.amazonaws.com'
+DB_HOST = '172.23.176.3'
 DB_PORT = 3306
 DB_USER = 'admin'
 DB_PASS = 'Soulrez123'
