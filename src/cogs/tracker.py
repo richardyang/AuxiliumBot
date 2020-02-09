@@ -13,7 +13,7 @@ class Tracker(commands.Cog):
         self.db = self.bot.get_cog('Database').db
 
         if config.LOGGING_CHANNEL:
-            self.logging_channel = client.get_channel(config.LOGGING_CHANNEL)
+            self.logging_channel = bot.get_channel(config.LOGGING_CHANNEL)
 
         with closing(self.db.cursor()) as cursor:
             # Create `gametime` table if it does not exist
