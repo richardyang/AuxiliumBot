@@ -148,15 +148,15 @@ class Tracker(commands.Cog):
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         if config.LOGGING_CHANNEL:
-            logging_channel = bot.get_channel(config.LOGGING_CHANNEL)
+            logging_channel = self.bot.get_channel(config.LOGGING_CHANNEL)
         else:
             return
 
         if after.channel:
-            await logging_channel.send("[{}] {} has joined the voice channel: {}".format(datetime.datetime.now(), member.nick, after.channel))
+            await logging_channel.send("[{}] {} has joined the voice channel: {}".format(datetime.datetime.now(), member.id, after.channel))
             return
         if before.channel and after.channel is None:
-            await logging_channel.send("[{}] {} has left the voice channel: {}".format(datetime.datetime.now(), member.nick, before.channel))
+            await logging_channel.send("[{}] {} has left the voice channel: {}".format(datetime.datetime.now(), member.id, before.channel))
             return
         
 
