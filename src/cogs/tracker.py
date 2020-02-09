@@ -153,10 +153,10 @@ class Tracker(commands.Cog):
             return
 
         if after.channel:
-            await logging_channel.send("[{}] {} has joined the voice channel: {}".format(datetime.datetime.now(), member.id, after.channel))
+            await logging_channel.send("[{}] {} has joined the voice channel: {}".format(datetime.datetime.now(), member.name, after.channel))
             return
         if before.channel and after.channel is None:
-            await logging_channel.send("[{}] {} has left the voice channel: {}".format(datetime.datetime.now(), member.id, before.channel))
+            await logging_channel.send("[{}] {} has left the voice channel: {}".format(datetime.datetime.now(), member.name, before.channel))
             return
         
 

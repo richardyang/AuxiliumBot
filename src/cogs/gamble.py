@@ -19,7 +19,7 @@ class Gamble(commands.Cog):
 
         user_id, level, exp, points = self.economy_cog.get_global_user_data(ctx.author.id)
         if points < bet:
-            await ctx.message.channel.send("Not enough coins for wager. Your currently have {} coins.".format(points))
+            await ctx.message.channel.send("Not enough coins for wager. You currently have {} coins.".format(points))
             return
 
         r = random.randint(0,100)
