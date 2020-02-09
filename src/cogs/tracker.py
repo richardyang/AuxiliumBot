@@ -11,6 +11,10 @@ class Tracker(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.db = self.bot.get_cog('Database').db
+
+        if config.LOGGING_CHANNEL:
+            self.logging_channel = client.get_channel(config.LOGGING_CHANNEL)
+
         with closing(self.db.cursor()) as cursor:
             # Create `gametime` table if it does not exist
             cursor.execute('''CREATE TABLE IF NOT EXISTS gametime (user_id INTEGER, app_id VARCHAR(5000), played INTEGER)''')
@@ -143,6 +147,16 @@ class Tracker(commands.Cog):
             cursor.execute('UPDATE gametime SET played=%s WHERE user_id=%s AND app_id=%s', (str(gametime + 1), user_id, app_id))
             self.db.commit()
         return
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+        if after.channel:
+            await self.logging_channel.send("[{}] {} has joined the voice channel: {}".format(datetime.datetime.now(), member.nick, after.channel))
+            return
+        if before.channel and after.channel is None:
+            await self.logging_channel.send("[{}] {} has left the voice channel: {}".format(datetime.datetime.now(), member.nick, before.channel))
+            return
+        
 
 def setup(bot):
     bot.add_cog(Tracker(bot))
