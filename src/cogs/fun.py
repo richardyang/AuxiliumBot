@@ -54,7 +54,7 @@ class Fun(commands.Cog):
             img = discord.File(os.path.join(self.src_dir,'img/8ball_{}.png'.format(r)))
             await channel.send(file=img)
 
-    @commands.command(name='8ball')
+    @commands.command(name='listclasses')
     async def listclasses(self, ctx):
         """
         -listclasses -> list all the available classes for pvp function
