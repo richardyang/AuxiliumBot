@@ -1,6 +1,6 @@
-import config
-
 import discord
+
+from config import conf
 from discord.ext import commands
 
 bot = commands.Bot(command_prefix='-')
@@ -29,4 +29,4 @@ bot.load_extension(f"cogs.rater")
 bot.load_extension(f"cogs.gamble")
 bot.load_extension(f"cogs.tracker")
 bot.load_extension(f"cogs.shop")
-bot.run(config.TOKEN)
+bot.run(conf["TOKEN"])
