@@ -3,7 +3,7 @@ with open("CONFIG") as config_file:
     for line in config_file:
         # Ignore # which are comments
         if not line.startswith("#") and "=" in line:
-            key, value = line.strip("\\n").split("=")
+            key, value = line.strip("\n").split("=")
             if "," in value:
                 value = value.split(",")
             conf[key] = value
