@@ -5,10 +5,8 @@
 # Obtain from https://discordapp.com/developers/applications
 TOKEN=NjE5NjcwMjA0NTA2NzAxODI5.XYm_Hw.39A1pW0fXggEG7isW2mMuIwTKcg
 
-# Experience awarded per message
-EXP_PER_MSG=1
-# Points awarded per character in message
-PTS_PER_CHAR=1
+# Experience awarded per character
+EXP_PER_CHAR=1
 
 LEADERBOARD_CHANNEL=625894298189168641
 
