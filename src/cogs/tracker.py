@@ -2,8 +2,9 @@ import os
 import base64
 import pymysql
 import datetime
-import config
 import discord
+
+from config import conf
 from contextlib import closing
 from discord.ext import tasks, commands
 
@@ -21,8 +22,8 @@ class Tracker(commands.Cog):
     @commands.command()
     async def topgames(self, ctx, user:discord.User=None):
         """
-        -topgames -> returns top games (up to 5) for the author of the message
-        -topgames @user -> returns top games (up to 5) for the specified user
+        -topgames -> returns top 5 played games for the author
+        -topgames @user -> returns top 5 played games for the mentioned user
         """
         if not user:
             # No user provided, return stats for self
@@ -71,7 +72,7 @@ class Tracker(commands.Cog):
     @commands.command()
     async def guildtopgames(self, ctx):
         """
-        -guildtopgames -> returns the top games (up to 5) for the entire guild
+        -guildtopgames -> returns the top 5 played games for the entire guild
         """
         with closing(self.db.cursor()) as cursor:
             cursor.execute('SELECT app_id, SUM(played) played_sum FROM gametime GROUP BY app_id ORDER BY played_sum DESC LIMIT 5')
@@ -144,21 +145,6 @@ class Tracker(commands.Cog):
             cursor.execute('UPDATE gametime SET played=%s WHERE user_id=%s AND app_id=%s', (str(gametime + 1), user_id, app_id))
             self.db.commit()
         return
-
-    @commands.Cog.listener()
-    async def on_voice_state_update(self, member, before, after):
-        if config.LOGGING_CHANNEL:
-            logging_channel = self.bot.get_channel(config.LOGGING_CHANNEL)
-        else:
-            return
-
-        if after.channel:
-            await logging_channel.send("[{}] {} has joined the voice channel: {}".format(datetime.datetime.now(), member.name, after.channel))
-            return
-        if before.channel and after.channel is None:
-            await logging_channel.send("[{}] {} has left the voice channel: {}".format(datetime.datetime.now(), member.name, before.channel))
-            return
-        
 
 def setup(bot):
     bot.add_cog(Tracker(bot))

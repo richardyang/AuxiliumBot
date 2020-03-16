@@ -1,6 +1,7 @@
-import config
 import pymysql
 import discord
+
+from config import conf
 from discord.ext import tasks, commands
 
 class Shop(commands.Cog):
@@ -12,6 +13,9 @@ class Shop(commands.Cog):
     
     @commands.command()
     async def buystatus(self, ctx, amount:int, *status):
+        """
+        -buystatus <amount> <message> Purchase a message to change the activity status of the bot to. Specify 'playing', 'streaming', 'listening' or 'watching' in message, or 'playing' will be used by default.
+        """ 
         channel = ctx.message.channel
         if not amount or not status:
             await channel.send("Usage: `-buystatus <amount> <message>`. Specify 'playing', 'streaming', 'listening' or 'watching' in message, or 'playing' will be used by default.")

@@ -1,6 +1,7 @@
 import os
-import config
 import discord
+
+from config import conf
 from discord.ext import commands
 
 class LinkRater(commands.Cog):
@@ -17,7 +18,7 @@ class LinkRater(commands.Cog):
         if message.author.bot:
             return
         
-        if message.channel.id in config.RATE_CHANNELS and (len(message.embeds) or "http" in message.content):
+        if message.channel.id in conf["RATE_CHANNELS"] and (len(message.embeds) or "http" in message.content):
             await message.add_reaction(emoji="👍")
             await message.add_reaction(emoji="👎")
         else:

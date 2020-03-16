@@ -1,6 +1,6 @@
 {
     "gw2_guardian": {
-        "icon": "<:guardian:629574093758267413>",
+        "name": "<:guardian:629574093758267413>",
         "attacks": [
             "Virtue of Justice",
             "Whirling Wrath",
@@ -24,7 +24,7 @@
         ]
     },
     "gw2_dragonhunter": {
-        "icon": "<:dragonhunter:629921097831415809>",
+        "name": "<:dragonhunter:629921097831415809>",
         "attacks": [
             "Spear of Justice",
             "Puncture Shot",
@@ -48,7 +48,7 @@
         ]
     },
     "gw2_warrior": {
-        "icon": "<:warrior:629574093947142144>",
+        "name": "<:warrior:629574093947142144>",
         "attacks": [
             "Hundred Blades",
             "Whirlwind Attack",
@@ -72,7 +72,7 @@
         ]
     },
     "gw2_spellbreaker": {
-        "icon": "<:spellbreaker:629921098049519616>",
+        "name": "<:spellbreaker:629921098049519616>",
         "attacks": [
             "Hundred Blades",
             "Whirlwind Attack",
@@ -96,7 +96,7 @@
         ]
     },
     "gw2_necromancer": {
-        "icon": "<:necromancer:629858805366259722>",
+        "name": "<:necromancer:629858805366259722>",
         "attacks": [
             "Blood Curse",
             "Grasping Dead",
@@ -120,7 +120,7 @@
         ]
     },
     "gw2_elementalist": {
-        "icon": "<:elementalist:633545564843147264>",
+        "name": "<:elementalist:633545564843147264>",
         "attacks": [
             "Lightning Strike",
             "Flame Strike",
@@ -136,7 +136,7 @@
         ]
     },
     "wow_paladin": {
-        "icon": "<:paladin:633548410871349249>",
+        "name": "<:paladin:633548410871349249>",
         "attacks": [
             "Consecration",
             "Seal of Righteousness",

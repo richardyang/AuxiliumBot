@@ -2,11 +2,11 @@ import os
 import random
 import discord
 import time
-import config
 import pymysql
 import json
 import numpy as np
 
+from config import conf
 from contextlib import closing
 from discord.ext import commands
 
@@ -42,6 +42,9 @@ class Fun(commands.Cog):
 
     @commands.command(name='8ball')
     async def eightball(self, ctx):
+        """
+        -8ball <question> -> ask 8ball a question and see the response
+        """
         channel = ctx.message.channel
         if ctx.message.content.strip() == "-8ball":
             img = discord.File(os.path.join(self.src_dir,'img/8ball_0.png'))
@@ -50,55 +53,20 @@ class Fun(commands.Cog):
             r = random.randint(1,5)
             img = discord.File(os.path.join(self.src_dir,'img/8ball_{}.png'.format(r)))
             await channel.send(file=img)
-    
-    @commands.command()
-    async def billy(self, ctx):
-        print("Press F for Billy")
+
+    @commands.command(name='8ball')
+    async def listclasses(self, ctx):
+        """
+        -listclasses -> list all the available classes for pvp function
+        """
         channel = ctx.message.channel
-        file = discord.File(os.path.join(self.src_dir, 'img/billy.gif'))
-        msg = await channel.send("Press F to pay respects", file=file)
-        await msg.add_reaction(emoji="🇫")
-
-    @commands.command()
-    async def ship(self, ctx, user1, user2=None):
-        channel = ctx.message.channel
-        if not user2:
-            user2 = user1
-            user1 = ctx.message.author.mention
-
-        hash1 = int(abs(hash(str(user1))) % (10 ** 8) * 1.5)
-        hash2 = abs(hash(str(user2))) % (10 ** 8)
-        result = abs(hash1-hash2) % 100
-
-        if result < 13:
-            result_txt = "Awful 😭"
-        elif 13 <= result < 26:
-            result_txt = "Bad 😢"
-        elif 26 <= result < 39:
-            result_txt = "Pretty Low 🙁"
-        elif 39 <= result < 52:
-            result_txt = "Barely 😕"
-        elif result == 69:
-            result_txt = "( ͡° ͜ʖ ͡°)"
-        elif 52 <= result < 65:
-            result_txt = "Not Bad 🤔"
-        elif 65 <= result < 78:
-            result_txt = "Pretty Good 😄"
-        elif 78 <= result < 91:
-            result_txt = "Great 😊"
-        elif 91 <= result < 100:
-            result_txt = "Amazing 😘"
-        else:
-            result_txt = "PERFECT!! 😍"
-        
-        progress = "█" * (result//10 + 1) + " "*(10 - result//10)
-        embed = discord.Embed(description="{}% [{}](https://auxilium.gg) {}".format(result, progress, result_txt), color=0xe882e8)
-        
-        await channel.send("❤️ COMPATIBILITY ❤️ \n 🔻 {0} \n 🔺 {1}".format(str(user1), str(user2), result, result_txt), embed=embed)
-
+        await channel.send("Available classes: `{}` \n Use -setclass <classname> to set your class.".format(', '.join(list(self.battle_classes.keys()))))
 
     @commands.command()
     async def setclass(self, ctx, class_str):
+        """
+        -setclass <class> -> changes player pvp class, use -listclasses to see all classes
+        """
         if class_str not in self.battle_classes.keys():
             await ctx.channel.send("{} is not a valid class option, choose from: `{}`".format(class_str, ', '.join(list(self.battle_classes.keys()))))
             return
@@ -118,11 +86,14 @@ class Fun(commands.Cog):
             with closing(self.db.cursor()) as cursor:
                 cursor.execute('UPDATE battle SET class=%s, wins=%s, losses=%s, pvp=%s WHERE user_id=%s', (class_str, wins, losses, pvp, user_id))
                 self.db.commit()
-        await ctx.channel.send("Your battle class has been set to {}".format(self.battle_classes[class_str]["icon"]))
+        await ctx.channel.send("Your battle class has been set to {}".format(self.battle_classes[class_str]["name"]))
         return
 
     @commands.command()
     async def enablepvp(self, ctx):
+        """
+        -enablepvp -> enables pvp mode, allows battles for coin wagers
+        """
         with closing(self.db.cursor()) as cursor:
             cursor.execute('SELECT * FROM battle WHERE user_id=%s', (str(ctx.author.id),) )
             query_response = cursor.fetchone()
@@ -146,6 +117,9 @@ class Fun(commands.Cog):
 
     @commands.command()
     async def disablepvp(self, ctx):
+        """
+        -disablepvp -> disables pvp mode, battles can be fought but no wagers
+        """
         with closing(self.db.cursor()) as cursor:
             cursor.execute('SELECT * FROM battle WHERE user_id=%s', (str(ctx.author.id),) )
             query_response = cursor.fetchone()
@@ -169,6 +143,9 @@ class Fun(commands.Cog):
 
     @commands.command()
     async def pvp(self, ctx, user1:discord.User, wager:int):
+        """
+        -pvp <@user> <wager> -> challenges user to battle with a wager, winner takes all
+        """
         if self.running_battles > 5:
             await ctx.channel.send("There are too many battles going on. Wait a bit before initiating another one.")
             return
@@ -187,7 +164,7 @@ class Fun(commands.Cog):
             return
         else:
             initiator_class = query_response[1]
-            initiator_icon = self.battle_classes[initiator_class]["icon"]
+            initiator_icon = self.battle_classes[initiator_class]["name"]
             initiator_attacks = self.battle_classes[initiator_class]["attacks"]
             initiator_blocks = self.battle_classes[initiator_class]["blocks"]
             initiator_heals = self.battle_classes[initiator_class]["heals"]
@@ -201,7 +178,7 @@ class Fun(commands.Cog):
             return
         else:
             target_class = query_response[1]
-            target_icon = self.battle_classes[target_class]["icon"]
+            target_icon = self.battle_classes[target_class]["name"]
             target_attacks = self.battle_classes[target_class]["attacks"]
             target_blocks = self.battle_classes[target_class]["blocks"]
             target_heals = self.battle_classes[target_class]["heals"]
@@ -292,6 +269,9 @@ class Fun(commands.Cog):
 
     @commands.command()
     async def battle(self, ctx, user1:discord.User=None, user2:discord.User=None):
+        """
+        -pvp <@user> -> challenges a user to battle for fun, no wagers involved
+        """
         if self.running_battles > 5:
             await ctx.channel.send("There are too many battles going on. Wait a bit before initiating another one.")
             return
@@ -315,7 +295,7 @@ class Fun(commands.Cog):
             initiator_class = random.choice(list(self.battle_classes.keys()))
         else:
             initiator_class = query_response[1]
-        initiator_icon = self.battle_classes[initiator_class]["icon"]
+        initiator_icon = self.battle_classes[initiator_class]["name"]
         initiator_attacks = self.battle_classes[initiator_class]["attacks"]
         initiator_blocks = self.battle_classes[initiator_class]["blocks"]
         initiator_heals = self.battle_classes[initiator_class]["heals"]
@@ -328,7 +308,7 @@ class Fun(commands.Cog):
             target_class = random.choice(list(self.battle_classes.keys()))
         else:
             target_class = query_response[1]
-        target_icon = self.battle_classes[target_class]["icon"]
+        target_icon = self.battle_classes[target_class]["name"]
         target_attacks = self.battle_classes[target_class]["attacks"]
         target_blocks = self.battle_classes[target_class]["blocks"]
         target_heals = self.battle_classes[target_class]["heals"]

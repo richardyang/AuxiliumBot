@@ -1,0 +1,38 @@
+#####################################################
+# BOT CONFIGURATION
+#####################################################
+# Replace XXXXX with your Discord bot token
+# Obtain from https://discordapp.com/developers/applications
+TOKEN="NjE5NjcwMjA0NTA2NzAxODI5.XYm_Hw.39A1pW0fXggEG7isW2mMuIwTKcg"
+
+# Experience awarded per message
+EXP_PER_MSG=1
+# Points awarded per character in message
+PTS_PER_CHAR=1
+
+LEADERBOARD_CHANNEL=625894298189168641
+
+# ID of the bot owner.
+# Grants access to administrative commands
+ADMIN_ID=83607236668030976
+
+# IDs of channels to enable upvote/downvote rating on links
+# Separate multiple channels using commas ,
+RATE_CHANNELS=626243249664819210
+
+#####################################################
+# DATABASE CONFIGURATION
+#####################################################
+# Specify whether to use sqlite (default) or remote 
+# mysql db to store data. For servers with < 100 members, 
+# sqlite is sufficient. Leave this unchanged if you are unsure
+#DB_TYPE=sqlite
+DB_TYPE=mysql
+
+# If you using remote mysql db, enter the connection 
+# info here
+MYSQL_HOST=172.23.176.3
+MYSQL_PORT=3306
+MYSQL_USER=admin
+MYSQL_PASS=Soulrez123
+MYSQL_DB=auxilium-db

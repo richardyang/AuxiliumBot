@@ -1,13 +1,12 @@
 import os
 import datetime
 import base64
-import pymysql
-import config
 import random
 import re
-from contextlib import closing
-
 import discord
+
+from config import conf
+from contextlib import closing
 from discord.ext import tasks, commands
 
 class Economy(commands.Cog):
@@ -26,6 +25,10 @@ class Economy(commands.Cog):
             
     @commands.Cog.listener()
     async def on_message(self, message):
+        """
+        Event handler when user posts a message
+        If not a command, add exp and currency to user's account
+        """
         # Do nothing if author is self
         if message.author == self.bot.user:
             return
@@ -37,10 +40,16 @@ class Economy(commands.Cog):
         if message.content.startswith("!") or message.content.startswith("?") or message.content.startswith("-"):
             return
 
+        if "can i get an f" in message.content.lower() or "can i get a f" in message.content.lower():
+            await message.add_reaction(emoji="🇫")
         await self.update_user_data(message)
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
+        """
+        Event handler when user leaves the server
+        Remove their database entry
+        """
         current_month = datetime.date.today().strftime("%B_%Y")  
         with closing(self.db.cursor()) as cursor:
             cursor.execute('UPDATE users SET level=%s, exp=%s, points=%s WHERE id=%s', (1, 0, 0, member.id))
@@ -50,6 +59,10 @@ class Economy(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
+        """
+        Event handler when user leaves the server
+        Add a new database entry
+        """
         # Do nothing if author is bot
         if message.author.bot:
             return
@@ -60,7 +73,10 @@ class Economy(commands.Cog):
     # Commands
     @commands.command()
     async def dbcleanup(self, ctx):
-        if ctx.message.author.id != config.ADMIN_ID:
+        """
+        Clean up the database and remove users that are not in the guild anymore
+        """
+        if ctx.message.author.id != conf["ADMIN_ID"]:
             return
         with closing(self.db.cursor()) as cursor:
             cursor.execute('SELECT id FROM users')
@@ -85,20 +101,23 @@ class Economy(commands.Cog):
 
     @commands.command()
     async def leaderboard(self, ctx):
+        """
+        -leaderboard -> posts the current exp/points leaderboard in the channel
+        """
         channel = ctx.message.channel
         print("Sending leaderboard embed")
         
         # if not board or board.lower() == "global":
         # Fetch top players by exp and send embed
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('SELECT * FROM users WHERE id!=%s ORDER BY exp DESC', (str(config.ADMIN_ID),))
+            cursor.execute('SELECT * FROM users ORDER BY exp DESC')
             query_response = cursor.fetchmany(5)
         embed = self.generate_global_exp_embed(query_response)
         await channel.send(embed=embed)
 
         # Fetch top players by points and send embed
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('SELECT * FROM users WHERE id!=%s ORDER BY points DESC', (str(config.ADMIN_ID),))
+            cursor.execute('SELECT * FROM users ORDER BY points DESC')
             query_response = cursor.fetchmany(5)
         embed = self.generate_global_pts_embed(query_response)
         await channel.send(embed=embed)
@@ -107,14 +126,14 @@ class Economy(commands.Cog):
         
         # # Fetch top players by exp and send embed
         # with closing(self.db.cursor()) as cursor:
-        #     cursor.execute('SELECT * FROM {} WHERE id!=%s ORDER BY exp_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
+        #     cursor.execute('SELECT * FROM {} ORDER BY exp_this_month DESC'.format(current_month))
         #     query_response = cursor.fetchmany(5)
         # embed = self.generate_monthly_exp_embed(query_response)
         # await channel.send(embed=embed)
 
         # # Fetch top players by points and send embed
         # with closing(self.db.cursor()) as cursor:
-        #     cursor.execute('SELECT * FROM {} WHERE id!=%s ORDER BY points_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
+        #     cursor.execute('SELECT * FROM {} ORDER BY points_this_month DESC'.format(current_month))
         #     query_response = cursor.fetchmany(5)
         # embed = self.generate_monthly_pts_embed(query_response)
         # await channel.send(embed=embed)
@@ -133,7 +152,7 @@ class Economy(commands.Cog):
             cursor.execute('SELECT * FROM users WHERE id=%s', (str(user.id),) )
             query_response = cursor.fetchone()
         user_id, user_level, user_exp, user_points = query_response
-        profile_str = "Level {} - {:,d} exp - {:,d} coins \n".format(config.LEVEL_IMAGES[user_level], user_exp, user_points)
+        profile_str = "Level {} - {:,d} exp - {:,d} coins \n".format(conf["LEVEL_IMAGES"].get(user_level, user_level), user_exp, user_points)
 
         with closing(self.db.cursor()) as cursor:
             cursor.execute('SELECT * FROM gametime WHERE user_id=%s ORDER BY played DESC LIMIT 1', (str(user.id),))
@@ -178,6 +197,9 @@ class Economy(commands.Cog):
 
     @commands.command()
     async def givegold(self, ctx, user:discord.User=None, amount:int=None):
+        """
+        -givegold @user <amount> -> send gold to the mentioned user
+        """
         amount = abs(amount)            
 
         if not user or not amount:
@@ -221,15 +243,15 @@ class Economy(commands.Cog):
     @tasks.loop(seconds=60)
     async def lb_update(self):
         print("Updating leaderboard")
-        channel = self.bot.get_channel(config.LEADERBOARD_CHANNEL)
+        channel = self.bot.get_channel(conf["LEADERBOARD_CHANNEL"])
         if not channel:
-            print("Batch update error in levels cog: channel {} not found.".format(config.LEADERBOARD_CHANNEL))
+            print("Batch update error in levels cog: channel {} not found.".format(conf["LEADERBOARD_CHANNEL"]))
             return
         
         # Get this month's exp leaderboard
         current_month = datetime.date.today().strftime("%B_%Y")
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('SELECT * FROM {} WHERE id!=%s ORDER BY exp_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
+            cursor.execute('SELECT * FROM {} ORDER BY exp_this_month DESC'.format(current_month))
             query_response = cursor.fetchmany(5)
         if not query_response:
             print("No monthly exp leaders")
@@ -238,7 +260,7 @@ class Economy(commands.Cog):
 
         # Get this month's point leaderboard
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('SELECT * FROM {} WHERE id!=%s ORDER BY points_this_month DESC'.format(current_month), (str(config.ADMIN_ID),))
+            cursor.execute('SELECT * FROM {} ORDER BY points_this_month DESC'.format(current_month))
             query_response = cursor.fetchmany(5)
         if not query_response:
             print("No monthly point leaders")
@@ -247,13 +269,13 @@ class Economy(commands.Cog):
 
         # Fetch top players by exp
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('SELECT * FROM users WHERE id!=%s ORDER BY exp DESC', (str(config.ADMIN_ID),))
+            cursor.execute('SELECT * FROM users ORDER BY exp DESC')
             query_response = cursor.fetchmany(5)
         glob_exp_embed = self.generate_global_exp_embed(query_response)
 
         # Fetch top players by points
         with closing(self.db.cursor()) as cursor:
-            cursor.execute('SELECT * FROM users WHERE id!=%s ORDER BY points DESC', (str(config.ADMIN_ID),))
+            cursor.execute('SELECT * FROM users ORDER BY points DESC')
             query_response = cursor.fetchmany(5)
         glob_pts_embed = self.generate_global_pts_embed(query_response)
         
@@ -322,13 +344,13 @@ class Economy(commands.Cog):
         # Remove links
         if "http" in message_str:
             message_str = " ".join([word for word in message_str.split(" ") if not word.startswith("http")])
-        exp = config.EXP_PER_MSG * len(message_str)
+        exp = conf["EXP_PER_MSG"] * len(message_str)
 
         # Calculate exp needed for next level. if a level occurs, send a message
         next_level_exp = 150 * ((user_level+1)**2) - (150 * (user_level+1))
         if user_exp > next_level_exp:
             user_level += 1
-            await message.channel.send('{} reached level {}'.format(message.author.mention, config.LEVEL_IMAGES[user_level]))
+            await message.channel.send('{} reached level {}'.format(message.author.mention, conf["LEVEL_IMAGES"].get(user_level, user_level)))
 
         await self.set_global_user_data(user_id, user_level, user_exp+exp, user_points+points)
         await self.set_monthly_user_data(user_id, user_exp_m+exp, user_points_m+points)
@@ -339,7 +361,7 @@ class Economy(commands.Cog):
         embed.set_thumbnail(url="https://vignette.wikia.nocookie.net/wowwiki/images/2/2f/Achievement_doublejeopardy.png")
         for user_info in query_response:
             user_id, user_level, user_exp, user_points = user_info
-            embed.add_field(name="{} {}".format(config.LEVEL_IMAGES[user_level], self.bot.get_user(user_id).name), 
+            embed.add_field(name="{} {}".format(conf["LEVEL_IMAGES"].get(user_level, user_level), self.bot.get_user(user_id).name), 
                             value="{:,d} exp".format(user_exp), 
                             inline=False)
         return embed
@@ -349,7 +371,7 @@ class Economy(commands.Cog):
         embed.set_thumbnail(url="https://vignette.wikia.nocookie.net/wowwiki/images/c/c4/Inv_misc_coin_02.png")
         for user_info in query_response:
             user_id, user_level, user_exp, user_points = user_info
-            embed.add_field(name="{} {}".format(config.LEVEL_IMAGES[user_level], self.bot.get_user(user_id).name), 
+            embed.add_field(name="{} {}".format(conf["LEVEL_IMAGES"].get(user_level, user_level), self.bot.get_user(user_id).name), 
                             value="{:,d} coins".format(user_points), 
                             inline=False)
         return embed
@@ -363,7 +385,7 @@ class Economy(commands.Cog):
             with closing(self.db.cursor()) as cursor:
                 cursor.execute('SELECT level FROM users WHERE id=%s', (user_id,) )
                 user_level = cursor.fetchone()[0]
-            embed.add_field(name="{} {}".format(config.LEVEL_IMAGES[user_level], self.bot.get_user(user_id).name), 
+            embed.add_field(name="{} {}".format(conf["LEVEL_IMAGES"].get(user_level, user_level), self.bot.get_user(user_id).name), 
                             value="{:,d} exp".format(user_exp), 
                             inline=False)
         return embed
@@ -377,7 +399,7 @@ class Economy(commands.Cog):
             with closing(self.db.cursor()) as cursor:
                 cursor.execute('SELECT level FROM users WHERE id=%s', (user_id,) )
                 user_level = cursor.fetchone()[0]
-            embed.add_field(name="{} {}".format(config.LEVEL_IMAGES[user_level], self.bot.get_user(user_id).name), 
+            embed.add_field(name="{} {}".format(conf["LEVEL_IMAGES"].get(user_level, user_level), self.bot.get_user(user_id).name), 
                             value="{:,d} coins".format(user_points), 
                             inline=False)
         return embed

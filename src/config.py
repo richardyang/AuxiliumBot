@@ -1,22 +1,19 @@
-TOKEN = "NjE5NjcwMjA0NTA2NzAxODI5.XYm_Hw.39A1pW0fXggEG7isW2mMuIwTKcg"
-DB_NAME = "Auxilium"
-EXP_PER_MSG = 1
-PTS_PER_CHAR = 1
-LEADERBOARD_CHANNEL = 625894298189168641
-LOGGING_CHANNEL = 675931875008577541
-ADMIN_ID = 83607236668030976
-# ADMIN_ID = 0
+conf = {}
+with open("../CONFIG") as config_file:
+    for line in config_file:
+        # Ignore # which are comments
+        if not line.startswith("#"):
+            key, value = line.split("=")
+            if "," in value:
+                value = value.split(",")
+            conf[key] = value
 
-RATE_CHANNELS = [626243249664819210]
+conf["LEVEL_IMAGES"] = {}
 
-# DB creds
-DB_HOST = '172.23.176.3'
-DB_PORT = 3306
-DB_USER = 'admin'
-DB_PASS = 'Soulrez123'
-DB_INST = 'auxilium-db'
-
-LEVEL_IMAGES = {
+#####################################################
+# AUXILIUM SPECIFIC CONFIG
+#####################################################
+conf["LEVEL_IMAGES"] = {
 1: "<:1_:625530366010195972>",
 2: "<:2_:625537488894558238>",
 3: "<:3_:625537488785637377>",

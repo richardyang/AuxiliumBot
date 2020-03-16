@@ -1,11 +1,11 @@
 import os
-import config
 import sqlite3
 import datetime
 import base64
-from contextlib import closing
-
 import discord
+
+from config import conf
+from contextlib import closing
 from discord.ext import tasks, commands
 
 class Awards(commands.Cog):
