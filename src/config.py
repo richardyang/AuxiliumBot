@@ -4,7 +4,7 @@ with open("CONFIG") as config_file:
         # Ignore # which are comments
         if not line.startswith("#") and "=" in line:
             key, value = line.strip("\n").split("=")
-            if "," in value:
+            if key == "RATE_CHANNELS":
                 value = value.split(",")
             conf[key] = value
 
