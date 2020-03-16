@@ -22,7 +22,7 @@ class Fun(commands.Cog):
             # Create `users` table if it does not exist
             cursor.execute('''CREATE TABLE IF NOT EXISTS battle (user_id INTEGER PRIMARY KEY, class VARCHAR(5000), wins INTEGER, losses INTEGER, pvp INTEGER)''')
         
-        with open(os.path.join(src_dir, "cogs/battle_classes.json", "r")) as fp:
+        with open(os.path.join(self.src_dir, "cogs/battle_classes.json", "r")) as fp:
             self.battle_classes = json.load(fp)
         self.running_battles = 0
         self.economy_cog = self.bot.get_cog("Economy")
