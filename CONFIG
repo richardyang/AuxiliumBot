@@ -8,8 +8,6 @@ TOKEN=NjE5NjcwMjA0NTA2NzAxODI5.XYm_Hw.39A1pW0fXggEG7isW2mMuIwTKcg
 # Experience awarded per character
 EXP_PER_CHAR=1
 
-LEADERBOARD_CHANNEL=625894298189168641
-
 # ID of the bot owner.
 # Grants access to administrative commands
 ADMIN_ID=83607236668030976
