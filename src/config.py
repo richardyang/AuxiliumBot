@@ -2,7 +2,7 @@ conf = {}
 with open("../CONFIG") as config_file:
     for line in config_file:
         # Ignore # which are comments
-        if not line.startswith("#"):
+        if not line.startswith("#") and "=" in line:
             key, value = line.split("=")
             if "," in value:
                 value = value.split(",")
