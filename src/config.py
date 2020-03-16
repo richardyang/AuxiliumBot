@@ -1,5 +1,5 @@
 conf = {}
-with open("../CONFIG") as config_file:
+with open("CONFIG") as config_file:
     for line in config_file:
         # Ignore # which are comments
         if not line.startswith("#") and "=" in line:
