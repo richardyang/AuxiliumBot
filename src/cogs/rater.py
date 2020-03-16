@@ -17,8 +17,8 @@ class LinkRater(commands.Cog):
         # Do nothing if author is bot
         if message.author.bot:
             return
-        print(conf["RATE_CHANNELS"])
-        if message.channel.id in conf["RATE_CHANNELS"] and (len(message.embeds) or "http" in message.content):
+
+        if str(message.channel.id) in conf["RATE_CHANNELS"] and (len(message.embeds) or "http" in message.content):
             await message.add_reaction(emoji="👍")
             await message.add_reaction(emoji="👎")
         else:
