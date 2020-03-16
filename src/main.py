@@ -24,7 +24,7 @@ async def on_ready():
 bot.load_extension(f"cogs.db")    
 bot.load_extension(f"cogs.economy")
 bot.load_extension(f"cogs.fun")
-bot.load_extension(f"cogs.aux")   
+bot.load_extension(f"cogs.auxilium")   
 bot.load_extension(f"cogs.rater")
 bot.load_extension(f"cogs.gamble")
 bot.load_extension(f"cogs.tracker")
