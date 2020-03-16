@@ -1,0 +1,35 @@
+#####################################################
+# BOT CONFIGURATION
+#####################################################
+# Your Discord bot token
+# Obtain from https://discordapp.com/developers/applications
+TOKEN=
+
+# Experience awarded per character in message
+EXP_PER_CHAR=1
+
+# ID of the bot owner. Right click your name in Discord, click
+# "Copy ID". Grants access to administrative commands.
+ADMIN_ID=
+
+# IDs of channels to enable upvote/downvote rating on links
+# Right click on channel in Discord, click "Copy ID"
+# Separate multiple channels using commas ,
+RATE_CHANNELS=
+
+#####################################################
+# DATABASE CONFIGURATION
+#####################################################
+# Specify whether to use sqlite (default) or remote 
+# mysql db to store data. For servers with < 100 members, 
+# sqlite is sufficient. Leave this unchanged if you are unsure
+DB_TYPE=sqlite
+#DB_TYPE=mysql
+
+# If you using remote mysql db, enter the connection 
+# info here
+MYSQL_HOST=
+MYSQL_PORT=
+MYSQL_USER=
+MYSQL_PASS=
+MYSQL_DB=

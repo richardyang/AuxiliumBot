@@ -1,0 +1,157 @@
+{
+    "gw2_guardian": {
+        "name": "Guardian",
+        "attacks": [
+            "Virtue of Justice",
+            "Whirling Wrath",
+            "Leap of Faith",
+            "Symbol of Wrath",
+            "Binding Blade",
+            "Sword of Wrath",
+            "Symbol of Blades",
+            "Ray of Judgment",
+            "Smite Condition",
+            "Judge's Intervention"
+        ],
+        "blocks": [
+            "Virtue of Courage",
+            "Shield of Wrath",
+            "Renewed Focus"
+        ],
+        "heals": [
+            "Virtue of Resolve",
+            "Litany of Wrath"
+        ]
+    },
+    "gw2_dragonhunter": {
+        "name": "Dragonhunter",
+        "attacks": [
+            "Spear of Justice",
+            "Puncture Shot",
+            "True Shot", 
+            "Symbol of Energy",
+            "Hunter's Ward",
+            "Sword of Wrath",
+            "Symbol of Blades",
+            "Shield of Judgment",
+            "Judge's Intervention",
+            "Test of Faith"
+        ],
+        "blocks": [
+            "Shield of Courage",
+            "Shield of Absorption",
+            "Renewed Focus"
+        ],
+        "heals": [
+            "Wings of Resolve",
+            "Purification"
+        ]
+    },
+    "gw2_warrior": {
+        "name": "Warrior",
+        "attacks": [
+            "Hundred Blades",
+            "Whirlwind Attack",
+            "Bladetrail",
+            "Rush",
+            "Arcing Slice",
+            "Cyclone Axe",
+            "Chop",
+            "Eviscerate",
+            "Shield Bash",
+            "Bull's Charge",
+            "Rampage"
+        ],
+        "blocks": [
+            "Shield Stance",
+            "Endure Pain",
+            "Beserker Stance"
+        ],
+        "heals": [
+            "Healing Signet"
+        ]
+    },
+    "gw2_spellbreaker": {
+        "name": "Spellbreaker",
+        "attacks": [
+            "Hundred Blades",
+            "Whirlwind Attack",
+            "Bladetrail",
+            "Rush",
+            "Arcing Slice",
+            "Aura Slicer",
+            "Precise Cut",
+            "Shield Bash",
+            "Bull's Charge",
+            "Rampage"
+        ],
+        "blocks": [
+            "Shield Stance",
+            "Endure Pain",
+            "Beserker Stance",
+            "Full Counter"
+        ],
+        "heals": [
+            "Healing Signet"
+        ]
+    },
+    "gw2_necromancer": {
+        "name": "Necromancer",
+        "attacks": [
+            "Blood Curse",
+            "Grasping Dead",
+            "Feast of Corruption",
+            "Wail of Doom",
+            "Locust Swarm",
+            "Necrotic Grasp",
+            "Mark of Blood",
+            "Chillblains",
+            "Putrid Mark",
+            "Reaper's Mark",
+            "Dark Path",
+            "Doom",
+            "Plaguelands"
+        ],
+        "blocks": [
+            "Spectral Armor"
+        ],
+        "heals": [
+            "Well of Blood"
+        ]
+    },
+    "gw2_elementalist": {
+        "name": "Elementalist",
+        "attacks": [
+            "Lightning Strike",
+            "Flame Strike",
+            "Dragon's Tooth",
+            "Phoenix"
+        ],
+        "blocks": [
+            "Obsidian Flesh",
+            "Arcane Shield"
+        ],
+        "heals": [
+            "Glyph of Elemntal Harmony"
+        ]
+    },
+    "wow_paladin": {
+        "name": "Paladin",
+        "attacks": [
+            "Consecration",
+            "Seal of Righteousness",
+            "Seal of Wisdom",
+            "Seal of Light",
+            "Holy Shock",
+            "Hammer of Justice",
+            "Hammer of Wrath"
+        ],
+        "blocks": [
+            "Divine Shield"
+        ],
+        "heals": [
+            "Flash of Light",
+            "Holy Light"
+        ]
+    }
+}
