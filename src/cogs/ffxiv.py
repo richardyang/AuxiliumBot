@@ -18,7 +18,7 @@ class FFXIV(commands.Cog):
             cursor.execute('''CREATE TABLE IF NOT EXISTS ffxiv (id BIGINT PRIMARY KEY, ffxivid BIGINT)''')
     
     @commands.command()
-    async def linkff14(self, ctx, first_name:str, last_name:str, server:str):
+    async def linkff14(self, ctx, first_name:str=None, last_name:str=None, server:str=None):
         params = {'name': '{} {}'.format(first_name, last_name), 'server': server, 'private_key': conf.get("FF14_TOKEN")}
         channel = ctx.message.channel
         author_id = ctx.message.author.id
