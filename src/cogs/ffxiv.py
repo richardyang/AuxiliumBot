@@ -79,7 +79,9 @@ class FFXIV(commands.Cog):
             embed = discord.Embed()
             embed.set_thumbnail(url=r['Character']['Avatar'])
             embed.add_field(name="Name:", value=r['Character']['Name'], inline=True)
-            embed.add_field(name="Class:", value="Level {} {} \n\u200b".format(r['Character']['ActiveClassJob']['Level'], main_class), inline=True)
+            embed.add_field(name="Class:", value="Level {} {}".format(r['Character']['ActiveClassJob']['Level'], main_class), inline=True)
+            embed.add_field(name=" ", value=" ", inline=True)
+            
             embed.add_field(name="Server:", value=r['Character']['Server'], inline=True)
             embed.add_field(name="Free Company:", value=fc, inline=True)
             await channel.send(embed=embed)
