@@ -84,6 +84,7 @@ class FFXIV(commands.Cog):
 
             embed.add_field(name="Server:", value=r['Character']['Server'], inline=True)
             embed.add_field(name="Free Company:", value=fc, inline=True)
+            embed.add_field(name="\u200B", value="\u200B", inline=True)
             await channel.send(embed=embed)
             return
         except Exception as e:
