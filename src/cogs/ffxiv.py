@@ -28,20 +28,22 @@ class FFXIV(commands.Cog):
         try:
             r = requests.get(url="http://xivapi.com/character/search", params=params).json()
             player = r['Results'][0]
-            if player['Name'] != "{} {}".format(first_name, last_name):
+            if player['Name'].lower() != "{} {}".format(first_name, last_name).lower():
                 await channel.send("Player not found, did you mean {}? Please try the command again.".format(player['Name']))
                 return
             else:
-                embed = discord.Embed(title="Your character has been linked to your Discord!")
+                embed = discord.Embed()
                 embed.set_thumbnail(url=player['Avatar'])
-                embed.add_field(name="Name:", value="{} {}".format(first_name, last_name), inline=False)
+                embed.add_field(name="Name:", value=player['Name'], inline=False)
                 embed.add_field(name="Server:", value=player['Server'].replace('\\xa0', ' '), inline=False)
-                await channel.send(embed=embed)
+                await channel.send("Your character has been linked!", embed=embed)
                 with closing(self.db.cursor()) as cursor:
                     # Create `users` table if it does not exist
                     cursor.execute('INSERT INTO ffxiv (id, ffxivid) VALUES(%s, %s) ON DUPLICATE KEY UPDATE id=%s, ffxivid=%s', (author_id, player['ID'], author_id, player['ID']))
                 return
-        except:
+                
+        except Exception as e:
+            print(e)
             await channel.send("Something went wrong while reaching the FFXIV servers. Please try again later.")
             return
 
