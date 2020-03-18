@@ -179,20 +179,20 @@ class Economy(commands.Cog):
             game_str = ""
 
         # Try to get primary award
-        with closing(self.db.cursor()) as cursor:
-            cursor.execute('SELECT * FROM users_awards_primary WHERE user_id=%s', (str(user.id),))
-            award_response = cursor.fetchone()
+        # with closing(self.db.cursor()) as cursor:
+        #     cursor.execute('SELECT * FROM users_awards_primary WHERE user_id=%s', (str(user.id),))
+        #     award_response = cursor.fetchone()
 
         embed = discord.Embed(description=profile_str+game_str)
         embed.set_author(name=str(user), icon_url=str(user.avatar_url))
-        if award_response:
-            user_id, award_name = award_response
-            with closing(self.db.cursor()) as cursor:
-                cursor.execute('SELECT * FROM awards WHERE award_id=%s', (award_name,))
-                award_name, award_img = cursor.fetchone()
-            award_img = base64.b64decode(award_img).decode()
-            print(award_img)
-            embed.set_thumbnail(url=award_img)
+        # if award_response:
+        #     user_id, award_name = award_response
+        #     with closing(self.db.cursor()) as cursor:
+        #         cursor.execute('SELECT * FROM awards WHERE award_id=%s', (award_name,))
+        #         award_name, award_img = cursor.fetchone()
+        #     award_img = base64.b64decode(award_img).decode()
+        #     print(award_img)
+        #     embed.set_thumbnail(url=award_img)
         await ctx.channel.send(embed=embed)
 
     @commands.command()
