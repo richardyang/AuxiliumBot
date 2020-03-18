@@ -71,7 +71,7 @@ class FFXIV(commands.Cog):
             main_class = string.capwords(r['Character']['ActiveClassJob']['Name'].split("/")[0].strip())
             
             try:
-                fc = r['Character']['FreeCompany']['Name']
+                fc = r['FreeCompany']['Name']
             except Exception as e:
                 print(e)
                 fc = "-"
@@ -80,7 +80,7 @@ class FFXIV(commands.Cog):
             embed.set_thumbnail(url=r['Character']['Avatar'])
             embed.add_field(name="Name:", value=r['Character']['Name'], inline=True)
             embed.add_field(name="Class:", value="Level {} {}".format(r['Character']['ActiveClassJob']['Level'], main_class), inline=True)
-            embed.add_field(name="Server:", value=r['Character']['Server'], inline=True)
+            embed.add_field(name="Server:", value=r['Character']['Server'], inline=False)
             embed.add_field(name="Free Company:", value=fc, inline=True)
             await channel.send(embed=embed)
             return
