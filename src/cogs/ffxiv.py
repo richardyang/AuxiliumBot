@@ -72,7 +72,8 @@ class FFXIV(commands.Cog):
             
             try:
                 fc = r['Character']['FreeCompany']['Name']
-            except:
+            except Exception as e:
+                print(e)
                 fc = "-"
 
             embed = discord.Embed()
