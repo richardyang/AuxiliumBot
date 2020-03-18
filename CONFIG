@@ -32,3 +32,10 @@ MYSQL_PORT=3306
 MYSQL_USER=admin
 MYSQL_PASS=Soulrez123
 MYSQL_DB=auxilium-db
+
+#####################################################
+# FFXIV BOT CONFIGURATION
+#####################################################
+# Token to access FFXIV
+# Obtain from https://xivapi.com
+FF14_TOKEN=369a6a84c8f246468e0356efbf3284dd9c6db63e21ba4c8b9c989e627cd7a4b5
