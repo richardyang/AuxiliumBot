@@ -3,6 +3,7 @@ import discord
 import requests
 import string
 import math
+import traceback
 
 from config import conf
 from contextlib import closing
@@ -100,7 +101,8 @@ class FFXIV(commands.Cog):
             await channel.send(embed=embed)
             return
         except Exception as e:
-            print(e)
+            track = traceback.format_exc()
+            print(track)
             await channel.send("Something went wrong while reaching the FFXIV servers. Please try again later.")
             return
 
