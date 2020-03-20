@@ -2,6 +2,7 @@ import pymysql
 import discord
 import requests
 import string
+import math
 
 from config import conf
 from contextlib import closing
@@ -69,7 +70,8 @@ class FFXIV(commands.Cog):
             r = requests.get(url="http://xivapi.com/character/{}".format(ff_id), params=params).json()
 
             main_class = string.capwords(r['Character']['ActiveClassJob']['Name'].split("/")[0].strip())
-            
+            player_levels = {c['Name'].replace(" ", "").split("/")[-1]:c['Level'] for c in r.json()['Character']['ClassJobs']}
+
             try:
                 fc = r['FreeCompany']['Name']
             except Exception as e:
@@ -82,15 +84,55 @@ class FFXIV(commands.Cog):
             embed.add_field(name="Server:", value=r['Character']['Server'], inline=True)
             embed.add_field(name="\u200B", value="\u200B", inline=True)
             
-            embed.add_field(name="Class:", value="Level {} {}".format(r['Character']['ActiveClassJob']['Level'], main_class), inline=True)
+            embed.add_field(name="Active Class:", value="Level {} {}".format(r['Character']['ActiveClassJob']['Level'], main_class), inline=True)
             embed.add_field(name="Free Company:", value=fc, inline=True)
             embed.add_field(name="\u200B", value="\u200B", inline=True)
+
+            n = math.ceil(len(player_levels)/3)
+            partitions = [list(player_levels.keys())[i:i + n] for i in range(0, len(player_levels), n)]
+            assert len(partitions) == 3
+            for classes in partitions:
+                class_list_str = ""
+                for c in classes:
+                    class_list_str += "{}: {} \n".format(CLASS_ICONS[c], player_levels[c])
+                embed.add_field(name="\u200B", value=class_list_str, inline=True)
+
             await channel.send(embed=embed)
             return
         except Exception as e:
             print(e)
             await channel.send("Something went wrong while reaching the FFXIV servers. Please try again later.")
             return
+
+
+CLASS_ICONS = {
+ 'paladin':'<:paladin:690464095530516521>',
+ 'warrior':'<:warrior:690464097891778561>',
+ 'darkknight':'<:darkknight:690464096595869747>',
+ 'gunbreaker':'<:gunbreaker:690464097438793758>',
+ 'whitemage':'<:whitemage:690464097027883058>',
+ 'scholar':'<:scholar:690464096604127272>',
+ 'astrologian':'<:astrologian:690464089905823755>',
+ 'monk':'<:monk:690464096537149451>',
+ 'dragoon':'<:dragoon:690464095807209483>',
+ 'ninja':'<:ninja:690464097384267776>',
+ 'samurai':'<:samurai:690464097715617803>',
+ 'bard':'<:bard:690464091520892928>',
+ 'machinist':'<:machinist:690464097057374229>',
+ 'dancer':'<:dancer:690464096625098804>',
+ 'blackmage':'<:blackmage:690464091776483358>',
+ 'summoner':'<:summoner:690464097137066024>',
+ 'redmage':'<:redmage:690464096201605144>',
+ 'bluemage':'<:bluemage:690464096642007040>',
+ 'alchemist':'<:alchemist:690464088001871872>',
+ 'armorer':'<:armorer:690464089809485844>',
+ 'blacksmith':'<:blacksmith:690464093781360661>',
+ 'carpenter':'<:carpenter:690464095224332340>',
+ 'culinarian':'<:culinarian:690464095018680320>',
+ 'goldsmith':'<:goldsmith:690464097375879189>',
+ 'leatherworker':'<:leatherworker:690464097984053258>',
+ 'weaver':'<:weaver:690464097921269780>'
+}
 
 def setup(bot):
     bot.add_cog(FFXIV(bot))
