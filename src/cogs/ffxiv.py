@@ -133,7 +133,10 @@ CLASS_ICONS = {
  'culinarian':'<:culinarian:690464095018680320>',
  'goldsmith':'<:goldsmith:690464097375879189>',
  'leatherworker':'<:leatherworker:690464097984053258>',
- 'weaver':'<:weaver:690464097921269780>'
+ 'weaver':'<:weaver:690464097921269780>',
+ 'botanist':'<:botanist:690464097266958346>',
+ 'fisher': '<:fisher:690464096449200148>',
+ 'miner': '<:miner:690464095841026109>'
 }
 
 def setup(bot):
