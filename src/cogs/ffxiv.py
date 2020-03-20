@@ -70,7 +70,7 @@ class FFXIV(commands.Cog):
             r = requests.get(url="http://xivapi.com/character/{}".format(ff_id), params=params).json()
 
             main_class = string.capwords(r['Character']['ActiveClassJob']['Name'].split("/")[0].strip())
-            player_levels = {c['Name'].replace(" ", "").split("/")[-1]:c['Level'] for c in r.json()['Character']['ClassJobs']}
+            player_levels = {c['Name'].replace(" ", "").split("/")[-1]:c['Level'] for c in r['Character']['ClassJobs']}
 
             try:
                 fc = r['FreeCompany']['Name']
