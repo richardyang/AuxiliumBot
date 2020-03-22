@@ -145,7 +145,7 @@ class FFXIV(commands.Cog):
             }
 
             for slot, item in r['Character']['GearSet']['Gear'].items():
-                gear_dict[slot] = "{} [{}]".format(item['Item']['Name'], item['Item']['LevelItem'])
+                gear_dict[slot] = "**{}** [{}]".format(item['Item']['Name'], item['Item']['LevelItem'])
 
             embed = discord.Embed()
             embed.set_thumbnail(url=r['Character']['Avatar'])
