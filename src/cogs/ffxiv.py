@@ -58,7 +58,6 @@ class FFXIV(commands.Cog):
         channel = ctx.message.channel
 
         with closing(self.db.cursor()) as cursor:
-            # Create `users` table if it does not exist
             cursor.execute('SELECT * FROM ffxiv WHERE id=%s', (user_id))
             response = cursor.fetchone()
             if not response:
@@ -85,7 +84,7 @@ class FFXIV(commands.Cog):
             embed.add_field(name="Server:", value=r['Character']['Server'], inline=True)
             embed.add_field(name="\u200B", value="\u200B", inline=True)
             
-            embed.add_field(name="Active Class:", value="Level {} {}".format(r['Character']['ActiveClassJob']['Level'], main_class), inline=True)
+            embed.add_field(name="Active Job:", value="Level {} {}".format(r['Character']['ActiveClassJob']['Level'], main_class), inline=True)
             embed.add_field(name="Free Company:", value=fc, inline=True)
             embed.add_field(name="\u200B", value="\u200B", inline=True)
 
@@ -95,7 +94,7 @@ class FFXIV(commands.Cog):
             for classes in partitions:
                 class_list_str = ""
                 for c in classes:
-                    class_list_str += "{}: {} \n".format(CLASS_ICONS[c], player_levels[c])
+                    class_list_str += "{}: {} \n".format(conf["FFXIV_CLASS_ICONS"][c], player_levels[c])
                 embed.add_field(name="\u200B", value=class_list_str, inline=True)
 
             await channel.send(embed=embed)
@@ -106,38 +105,73 @@ class FFXIV(commands.Cog):
             await channel.send("Something went wrong while reaching the FFXIV servers. Please try again later.")
             return
 
+    @commands.command()
+    async def ff14gear(self, ctx, user:discord.User=None):
+        if not user:
+            user = ctx.message.author
+        user_id = user.id
+        
+        channel = ctx.message.channel
 
-CLASS_ICONS = {
- 'paladin':'<:paladin:690464095530516521>',
- 'warrior':'<:warrior:690464097891778561>',
- 'darkknight':'<:darkknight:690464096595869747>',
- 'gunbreaker':'<:gunbreaker:690464097438793758>',
- 'whitemage':'<:whitemage:690464097027883058>',
- 'scholar':'<:scholar:690464096604127272>',
- 'astrologian':'<:astrologian:690464089905823755>',
- 'monk':'<:monk:690464096537149451>',
- 'dragoon':'<:dragoon:690464095807209483>',
- 'ninja':'<:ninja:690464097384267776>',
- 'samurai':'<:samurai:690464097715617803>',
- 'bard':'<:bard:690464091520892928>',
- 'machinist':'<:machinist:690464097057374229>',
- 'dancer':'<:dancer:690464096625098804>',
- 'blackmage':'<:blackmage:690464091776483358>',
- 'summoner':'<:summoner:690464097137066024>',
- 'redmage':'<:redmage:690464096201605144>',
- 'bluemage':'<:bluemage:690464096642007040>',
- 'alchemist':'<:alchemist:690464088001871872>',
- 'armorer':'<:armorer:690464089809485844>',
- 'blacksmith':'<:blacksmith:690464093781360661>',
- 'carpenter':'<:carpenter:690464095224332340>',
- 'culinarian':'<:culinarian:690464095018680320>',
- 'goldsmith':'<:goldsmith:690464097375879189>',
- 'leatherworker':'<:leatherworker:690464097984053258>',
- 'weaver':'<:weaver:690464097921269780>',
- 'botanist':'<:botanist:690464097266958346>',
- 'fisher': '<:fisher:690464096449200148>',
- 'miner': '<:miner:690464095841026109>'
-}
+        with closing(self.db.cursor()) as cursor:
+            cursor.execute('SELECT * FROM ffxiv WHERE id=%s', (user_id))
+            response = cursor.fetchone()
+            if not response:
+                await channel.send("You haven't linked your FFXIV character yet. Use the `-linkff14` command to link your character, or mention another @user to view their profile.")
+                return
+            user_id, ff_id = response
+
+        try:
+            params = {'extended': '1', 'data':'CJ'}
+            r = requests.get(url="http://xivapi.com/character/{}".format(ff_id), params=params).json()
+            
+            main_class = string.capwords(r['Character']['ActiveClassJob']['Name'].split("/")[0].strip())
+            
+            gear_dict = {
+                "MainHand": '-',
+                "Head": '-',
+                "Body": '-',
+                "Hands": '-',
+                "Waist": '-',
+                "Legs": '-',
+                "Feet": '-',
+                "OffHand": '-',
+                "Earrings": '-',
+                "Necklace": '-',
+                "Bracelets": '-',
+                "Ring1": '-',
+                "Ring2": '-',
+                "SoulCrystal": '-'
+            }
+
+            for slot, item in r['Character']['GearSet']['Gear'].items():
+                gear_dict[slot] = "{} [{}]".format(item['Item']['Name'], item['Item']['LevelItem'])
+
+            embed = discord.Embed()
+            embed.set_thumbnail(url=r['Character']['Avatar'])
+            embed.add_field(name="Name:", value=r['Character']['Name'], inline=True)
+            embed.add_field(name="Active Job:", value="Level {} {}".format(r['Character']['ActiveClassJob']['Level'], main_class), inline=True)
+            embed.add_field(name="\u200B", value="\u200B", inline=True)
+
+            n = math.ceil(len(gear_dict)/2)
+            partitions = [list(gear_dict.keys())[i:i + n] for i in range(0, len(gear_dict), n)]
+            assert len(partitions) == 2
+            for i in range(len(partitions[0])):
+                embed.add_field(name=partitions[0][i], value=gear_dict[partitions[0][i]], inline=True)
+                embed.add_field(name=partitions[1][i], value=gear_dict[partitions[1][i]], inline=True)
+                embed.add_field(name="\u200B", value='\u200B', inline=True)
+
+            await channel.send(embed=embed)
+            return
+        except Exception as e:
+            track = traceback.format_exc()
+            print(track)
+            await channel.send("Something went wrong while reaching the FFXIV servers. Please try again later.")
+            return
+
+
+
+
 
 def setup(bot):
     bot.add_cog(FFXIV(bot))
