@@ -145,7 +145,7 @@ class FFXIV(commands.Cog):
             }
 
             for slot, item in r['Character']['GearSet']['Gear'].items():
-                gear_dict[slot] = "**{}** [{}]".format(item['Item']['Name'], item['Item']['LevelItem'])
+                gear_dict[slot] = "{} [{}]".format(item['Item']['Name'], item['Item']['LevelItem'])
 
             embed = discord.Embed()
             embed.set_thumbnail(url=r['Character']['Avatar'])
@@ -157,8 +157,8 @@ class FFXIV(commands.Cog):
             partitions = [list(gear_dict.keys())[i:i + n] for i in range(0, len(gear_dict), n)]
             assert len(partitions) == 2
             for i in range(len(partitions[0])):
-                embed.add_field(name=partitions[0][i], value=gear_dict[partitions[0][i]], inline=True)
-                embed.add_field(name=partitions[1][i], value=gear_dict[partitions[1][i]], inline=True)
+                embed.add_field(name="**{}**".format(partitions[0][i]), value=gear_dict[partitions[0][i]], inline=True)
+                embed.add_field(name="**{}**".format(partitions[1][i]), value=gear_dict[partitions[1][i]], inline=True)
                 embed.add_field(name="\u200B", value='\u200B', inline=True)
 
             await channel.send(embed=embed)
