@@ -211,6 +211,8 @@ class FFXIV(commands.Cog):
                     soup = BeautifulSoup(data, 'html.parser')
                     for key, value in zip(soup.find_all("table")[0].find_all("th"),soup.find_all("table")[0].find_all("td")):
                         embed.add_field(name=HTML_TAG_RE.sub('', str(key)), value=HTML_TAG_RE.sub('', str(value)) or '-', inline=True)
+                    embed.add_field(name="\u200B", value='\u200B', inline=True)
+                    embed.set_footer(text="Market data is based on your character's server: {}.".format(server))
             except Exception as e:
                 track = traceback.format_exc()
                 print(track)
