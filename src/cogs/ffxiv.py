@@ -194,7 +194,10 @@ class FFXIV(commands.Cog):
             item_id = r['Results'][0]['ID']
             item = requests.get(url="https://xivapi.com/item/{}".format(item_id)).json()
             
-            embed = discord.Embed(title=item['Name'], description=item['Description'], url="https://www.garlandtools.org/db/#item/{}".format(item_id))
+            embed = discord.Embed(
+                title=item['Name'], 
+                description="{}\n{}".format(item['ItemSearchCategory']['Name'], item['Description']), 
+                url="https://www.garlandtools.org/db/#item/{}".format(item_id))
             embed.set_thumbnail(url="https://www.garlandtools.org/files/icons/item/{}.png".format(item["IconID"]))
             
             await channel.send(embed=embed)
