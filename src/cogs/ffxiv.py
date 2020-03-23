@@ -210,7 +210,7 @@ class FFXIV(commands.Cog):
                     data = requests.get("https://www.ffxivmb.com/Items/{}/{}".format(server, item_id)).content
                     soup = BeautifulSoup(data, 'html.parser')
                     for key, value in zip(soup.find_all("table")[0].find_all("th"),soup.find_all("table")[0].find_all("td")):
-                        embed.add_field(name=HTML_TAG_RE.sub('', str(key)), value=HTML_TAG_RE.sub('', str(value)), inline=True)
+                        embed.add_field(name=HTML_TAG_RE.sub('', str(key)), value=HTML_TAG_RE.sub('', str(value)) or '-', inline=True)
             except Exception as e:
                 track = traceback.format_exc()
                 print(track)
