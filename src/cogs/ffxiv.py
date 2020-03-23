@@ -200,7 +200,7 @@ class FFXIV(commands.Cog):
             
             embed = discord.Embed(
                 title=item['Name'], 
-                description="{}\n{}".format(item['ItemSearchCategory']['Name'], HTML_TAG_RE.sub('', item['Description'])), 
+                description="{}\n{}".format(item['ItemUICategory']['Name'], HTML_TAG_RE.sub('', item['Description'])), 
                 url="https://www.garlandtools.org/db/#item/{}".format(item_id))
             embed.set_thumbnail(url="https://www.garlandtools.org/files/icons/item/{}.png".format(item["IconID"]))
             
