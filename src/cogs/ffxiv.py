@@ -173,7 +173,7 @@ class FFXIV(commands.Cog):
             print(track)
             await channel.send("Something went wrong while reaching the FFXIV servers. Please try again later.")
             return
-
+ 
     @commands.command()
     async def ff14search(self, ctx, *args):
         search_string = " ".join(args)
@@ -208,10 +208,10 @@ class FFXIV(commands.Cog):
             return    
 
         except Exception as e:
-            print(e)
+            track = traceback.format_exc()
+            print(track)
             await channel.send("Something went wrong while reaching the FFXIV servers. Please try again later.")
             return
-
 
 
 
