@@ -45,7 +45,8 @@ class FFXIV(commands.Cog):
                 return
                 
         except Exception as e:
-            print(e)
+            track = traceback.format_exc()
+            print(track)
             await channel.send("Something went wrong while reaching the FFXIV servers. Please try again later.")
             return
 
@@ -166,6 +167,41 @@ class FFXIV(commands.Cog):
         except Exception as e:
             track = traceback.format_exc()
             print(track)
+            await channel.send("Something went wrong while reaching the FFXIV servers. Please try again later.")
+            return
+
+    @commands.command()
+    async def ff14search(self, ctx, *args):
+        search_string = " ".join(args)
+        channel = ctx.message.channel
+
+        server = None
+        with closing(self.db.cursor()) as cursor:
+            cursor.execute('SELECT * FROM ffxiv WHERE id=%s', (ctx.message.author.id))
+            response = cursor.fetchone()
+        
+        try:
+            if response:
+                _, ff_id = response
+                server = requests.get(url="http://xivapi.com/character/{}".format(ff_id)).json()['Character']['Server']
+
+            params = {'indexes': 'Item', 'string_algo': 'fuzzy', 'string': search_string}
+            r = requests.get(url="http://xivapi.com/search", params=params).json()
+            if len(r['Results']) == 0:
+                await channel.send("Did not find any items matching your search.")
+                return
+            
+            item_id = r['Results'][0]['ID']
+            item = requests.get(url="https://xivapi.com/item/{}".format(item_id)).json()
+            
+            embed = discord.Embed(title=item['Name'], description=item['Description'], url="https://www.garlandtools.org/db/#item/{}".format(item_id))
+            embed.set_thumbnail(url="https://www.garlandtools.org/files/icons/item/{}.png".format(item["IconID"]))
+            
+            await channel.send(embed=embed)
+            return    
+
+        except Exception as e:
+            print(e)
             await channel.send("Something went wrong while reaching the FFXIV servers. Please try again later.")
             return
 
