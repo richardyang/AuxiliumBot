@@ -6,6 +6,7 @@ import math
 import traceback
 import re
 
+from bs4 import BeautifulSoup
 from config import conf
 from contextlib import closing
 from discord.ext import tasks, commands
@@ -204,6 +205,16 @@ class FFXIV(commands.Cog):
                 url="https://www.garlandtools.org/db/#item/{}".format(item_id))
             embed.set_thumbnail(url="https://www.garlandtools.org/files/icons/item/{}.png".format(item["IconID"]))
             
+            try:
+                if server:
+                    data = requests.get("https://www.ffxivmb.com/Items/{}/{}".format(server, item_id)).content
+                    soup = BeautifulSoup(data, 'html.parser')
+                    for key, value in zip(soup.find_all("table")[0].find_all("th"),soup.find_all("table")[0].find_all("td")):
+                        embed.add_field(name=HTML_TAG_RE.sub('', str(key)), value=HTML_TAG_RE.sub('', str(value)), inline=True)
+            except Exception as e:
+                track = traceback.format_exc()
+                print(track)
+
             await channel.send(embed=embed)
             return    
 
