@@ -4,10 +4,14 @@ import requests
 import string
 import math
 import traceback
+import re
 
 from config import conf
 from contextlib import closing
 from discord.ext import tasks, commands
+
+
+HTML_TAG_RE = re.compile(r'<[^>]+>')
 
 class FFXIV(commands.Cog):
     def __init__(self, bot):
@@ -196,7 +200,7 @@ class FFXIV(commands.Cog):
             
             embed = discord.Embed(
                 title=item['Name'], 
-                description="{}\n{}".format(item['ItemSearchCategory']['Name'], item['Description']), 
+                description="{}\n{}".format(item['ItemSearchCategory']['Name'], HTML_TAG_RE.sub('', item['Description'])), 
                 url="https://www.garlandtools.org/db/#item/{}".format(item_id))
             embed.set_thumbnail(url="https://www.garlandtools.org/files/icons/item/{}.png".format(item["IconID"]))
             
