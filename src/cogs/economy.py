@@ -64,7 +64,7 @@ class Economy(commands.Cog):
         Add a new database entry
         """
         # Do nothing if author is bot
-        if message.author.bot:
+        if member.bot:
             return
         with closing(self.db.cursor()) as cursor:
             cursor.execute('INSERT INTO users VALUES (%s,%s,%s,%s)', (str(member.id),1,0,0))
