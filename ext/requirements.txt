@@ -1,0 +1,10 @@
+discord.py
+contextlib2
+PyMySQL
+torch
+pytorch-ignite
+transformers==2.5.1
+tensorboardX==1.8
+tensorflow
+requests
+beautifulsoup4

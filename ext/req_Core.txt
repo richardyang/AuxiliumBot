@@ -1,0 +1,3 @@
+discord.py
+contextlib2
+PyMySQL

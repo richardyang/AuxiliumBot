@@ -1,0 +1,5 @@
+discord.py
+contextlib2
+PyMySQL
+requests
+beautifulsoup4
