@@ -1,2 +1,5 @@
 
 *.pyc
+src/config.py
+src/conv_ai/model/pytorch_model.bin
+src/conv_ai/dataset_cache_OpenAIGPTTokenizer

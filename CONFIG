@@ -1,10 +1,23 @@
 #####################################################
-# BOT CONFIGURATION
+# REQUIRED CONFIG
+# You must provide a value for all settings in this section
 #####################################################
 # Your Discord bot token
 # Obtain from https://discordapp.com/developers/applications
 TOKEN=
 
+#####################################################
+# COMPONENTS
+# Change value to 1 to enable the component, 0 to disable
+#####################################################
+AUX_CORE=1
+AUX_FFXIV=0
+AUX_THETA=0
+
+#####################################################
+# CORE CONFIGURATION
+# Required if using AUXCore Bot
+#####################################################
 # Experience awarded per character in message
 EXP_PER_CHAR=1
 
@@ -18,7 +31,8 @@ ADMIN_ID=
 RATE_CHANNELS=
 
 #####################################################
-# DATABASE CONFIGURATION
+# CORE DATABASE CONFIGURATION
+# Required if using AUXCore Bot
 #####################################################
 # Specify whether to use sqlite (default) or remote 
 # mysql db to store data. For servers with < 100 members, 
@@ -33,3 +47,11 @@ MYSQL_PORT=
 MYSQL_USER=
 MYSQL_PASS=
 MYSQL_DB=
+
+#####################################################
+# FFXIV BOT CONFIGURATION
+# Required if using AUXFFXIV Bot
+#####################################################
+# Token to access FFXIV
+# Obtain from https://xivapi.com
+FF14_TOKEN=

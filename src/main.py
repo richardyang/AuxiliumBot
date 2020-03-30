@@ -21,12 +21,16 @@ async def on_ready():
     print('------')
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="Buy this space with AUX coins!"))
 
-bot.load_extension(f"cogs.db")    
-bot.load_extension(f"cogs.economy")
-bot.load_extension(f"cogs.fun")
-bot.load_extension(f"cogs.auxilium")   
-bot.load_extension(f"cogs.rater")
-bot.load_extension(f"cogs.gamble")
-bot.load_extension(f"cogs.tracker")
-bot.load_extension(f"cogs.shop")
+if conf["AUX_CORE"]:
+    bot.load_extension(f"cogs.db")    
+    bot.load_extension(f"cogs.economy")
+    bot.load_extension(f"cogs.fun")
+    bot.load_extension(f"cogs.rater")
+    bot.load_extension(f"cogs.gamble")
+    bot.load_extension(f"cogs.tracker")
+    bot.load_extension(f"cogs.shop")
+if conf["AUX_FFXIV"]:
+    bot.load_extension(f"cogs.ffxiv")
+if conf["AUX_THETA"]:
+    bot.load_extension(f"cogs.theta")
 bot.run(conf["TOKEN"])
