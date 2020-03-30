@@ -11,6 +11,7 @@
 
 This repository is the public release version of Auxilium, written in Python using the [Discord.py](https://discordpy.readthedocs.io/en/latest/) API. 
 
+[Features](#features) · [Installation](#installation) · [Support](#support) · [License](#license)
 
 ## Features
 Auxilium (AUX) is modular, so you can only enable the features you need. Currently there are 3 components, but we love collaborators to help extend our bot even further!
@@ -21,6 +22,7 @@ Auxilium (AUX) is modular, so you can only enable the features you need. Current
 Some highlights of the bot are shown below. For the full list of functionality, type `-help` for more information once it is in your server.
 
 ### AUX Core
+___
 Core includes a lot of utilities to supercharge your chat and make it fun. Core also serves as a bridge between the Discord API and your choice of a SQLite or remote MySQL database to store data about your server. You can turn your Discord chat into a game by enabling leveling and economy. Each message a user posts will earn them some experience points and coins.
 
 ![](https://cdn.discordapp.com/attachments/691876919095853069/694040149855567892/unknown.png)
@@ -40,6 +42,7 @@ Another fun feature is the battle system that allows users to virtually battle e
 Other features include an 8-ball, upvotes/downvotes, awards, and random utilities for your chat! Check out the help document for a list of all the features.
 
 ### AUX Theta
+___
 Theta is the module for all services powered by machine learning. Currently, we've implemented a conversational AI using a transfer learning technique by [HuggingFace](https://medium.com/huggingface/how-to-build-a-state-of-the-art-conversational-ai-with-transfer-learning-2d818ac26313) using a pre-trained GPT-2 language model from OpenAI.
 
 ![](https://i.imgur.com/Yjbw8sk.gif)
@@ -47,6 +50,7 @@ Theta is the module for all services powered by machine learning. Currently, we'
 A work-in-progress feature is a language translation tool using deep learning models. Stay tuned for more info!
 
 ### AUX FFXIV
+___
 FFXIV contains helpful utilities specifically for Final Fantasy XIV. It pulls information from the Lodestone and the XIV API.
 
 ![](https://i.imgur.com/h8nPhSU.png)
