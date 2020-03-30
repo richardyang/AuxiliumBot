@@ -42,14 +42,14 @@ Other features include an 8-ball, upvotes/downvotes, awards, and random utilitie
 ### AUX Theta
 Theta is the module for all services powered by machine learning. Currently, we've implemented a conversational AI using a transfer learning technique by [HuggingFace](https://medium.com/huggingface/how-to-build-a-state-of-the-art-conversational-ai-with-transfer-learning-2d818ac26313) using a pre-trained GPT-2 language model from OpenAI.
 
-![](https://cdn.discordapp.com/attachments/694045222916587541/694091071889604668/convai.gif)
+![](https://i.imgur.com/Yjbw8sk.gif)
 
 A work-in-progress feature is a language translation tool using deep learning models. Stay tuned for more info!
 
 ### AUX FFXIV
 FFXIV contains helpful utilities specifically for Final Fantasy XIV. It pulls information from the Lodestone and the XIV API.
 
-![](https://cdn.discordapp.com/attachments/694045222916587541/694092468181794816/unknown.png)
+![](https://i.imgur.com/h8nPhSU.png)
 
 Users can link their character to the bot, and all information displayed will be geared toward their character and server. For example, when a user searches for an item, the market prices will be shown for their server.
 
@@ -62,10 +62,10 @@ This bot is currently self-hosted only, with a public beta planned in 2020. Thes
 1. Create an application in the Discord developer portal and obtain the token. You can follow this handy instruction guide: https://github.com/reactiflux/discord-irc/wiki/Creating-a-discord-bot-&-getting-a-token
 2. Install Python 3.6+, we suggest using Anaconda: https://www.anaconda.com/distribution/#download-section
 3. Clone this repository on the machine you are hosting the bot
-4. Install dependencies by running `pip install -r ext/requirements.txt`. This will install the dependencies for ALL components. If you don't want to use all of the components (e.g. Core, Theta, FFXIV) you can install the partial dependencies by running `pip install -r ext/req_COMPONENT.txt` and replace COMPONENT in the filename with the one you want.
+4. Install dependencies by running `pip install -r ext/requirements.txt`. This will install the dependencies for ALL components. If you don't want to use all of the components, you can install the partial dependencies by running `pip install -r ext/req_COMPONENT.txt` and replace COMPONENT in the filename with the one you want (e.g. Core, Theta, FFXIV).
 5. Edit the `CONFIG` file with your favorite text editor, and follow the instructions outlined in the file to properly configure your bot.
-6. Start the bot using `python run.py`!
-7. [OPTIONAL] By default, AUX stores data in a SQLite database. If you have a large server, you may want to set up a dedicated MySQL database. Once done, you can fill out the connection information in the `CONFIG` file. 
+6. Start the bot using `python run.py` in the root directory.
+7. [ADVANCED/OPTIONAL] By default, AUX stores data in a SQLite database. If you have a large server, you may want to set up a dedicated MySQL database. Once done, you can fill out the connection information in the `CONFIG` file. 
 
 ## Support
 If you need any assitance with the bot, find any bugs, or would to request a new feature, please join our Discord server: https://discord.gg/YSntuFn
