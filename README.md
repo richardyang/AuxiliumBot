@@ -2,7 +2,7 @@
 
 # Auxilium
 
-[![](https://img.shields.io/discord/85398421053116416.svg?logo=discord&colorB=7289DA&logoColor=white)](https://discord.gg/aeRK9nU)
+[![](https://img.shields.io/discord/85398421053116416.svg?logo=discord&colorB=7289DA&logoColor=white)]
 [![GitHub last commit](https://img.shields.io/github/last-commit/richardyang/AuxiliumBot.svg?style=flat)](https://github.com/richardyang/AuxiliumBot)
 [![MIT License](https://img.shields.io/apm/l/atomic-design-ui.svg?)](https://github.com/richardyang/AuxiliumBot/blob/master/LICENSE)
 <!-- [![](https://img.shields.io/badge/discord.js-v12.0.0--dev-blue.svg?logo=npm)](https://github.com/discordjs) -->
